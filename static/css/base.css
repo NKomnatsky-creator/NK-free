@@ -1,0 +1,125 @@
+/* === Layout: body, sidebar, main-content, общие навигационные элементы === */
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-base);
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(var(--brand-rgb), 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(var(--brand-2-rgb), 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+[data-bs-theme="dark"] body {
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(var(--brand-rgb), 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(var(--brand-2-rgb), 0.03) 0%, transparent 40%);
+}
+
+.app-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 270px;
+    background: var(--bg-solid);
+    border-right: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
+}
+
+.main-content {
+    flex-grow: 1;
+    min-width: 0;
+    margin-left: 270px;
+    padding: 30px 40px;
+    transition: margin-left 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.nav-item-custom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    margin: 2px 16px;
+    border-radius: var(--radius-btn);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.nav-item-custom:hover {
+    background: var(--hover-bg);
+    color: var(--text-main);
+    transform: translateX(2px);
+}
+
+.nav-item-custom.active {
+    background: var(--brand-light);
+    color: var(--brand-contrast);
+    font-weight: 600;
+    border-color: rgba(var(--brand-rgb), 0.1);
+    box-shadow: 0 2px 8px rgba(var(--brand-rgb), 0.05);
+}
+
+.nav-item-custom i {
+    font-size: 1.2rem;
+}
+
+/* Тёмная тема: стандартный синий Bootstrap-slug слишком тусклый на тёмном фоне. */
+[data-bs-theme="dark"] .btn-outline-primary {
+    --bs-btn-color: var(--brand-contrast);
+    --bs-btn-border-color: var(--brand-contrast);
+    --bs-btn-hover-color: #0f1115;
+    --bs-btn-hover-bg: var(--brand-contrast);
+    --bs-btn-hover-border-color: var(--brand-contrast);
+}
+
+.sidebar-overlay {
+    display: block;
+    visibility: hidden;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1035;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.sidebar-overlay.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 991px) {
+    .sidebar { transform: translateX(-100%); z-index: 1050; }
+    .sidebar.show { transform: translateX(0); }
+    .sidebar-overlay { z-index: 1040; }
+    .main-content { margin-left: 0; padding: 20px 15px 80px 15px; }
+}

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" data-bs-theme="light" style="--theme-brand: {{ theme.brand }}; --theme-brand-2: {{ theme.brand2 }}; --theme-brand-rgb: {{ theme.brand_rgb }}; --theme-brand-2-rgb: {{ theme.brand2_rgb }}; --theme-radius-card: {{ theme.radius_card }}px; --theme-radius-modal: {{ theme.radius_modal }}px; --theme-font: '{{ theme.font }}';">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ t('meta_description') }}">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}{{ theme.company }}{% endblock %}</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="{{ theme.brand }}">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    {% if theme.logo_url %}
+    <link rel="icon" href="{{ theme.logo_url }}">
+    {% endif %}
+
+    <script>
+        (function() {
+            let saved = null, glass = null;
+            try {
+                saved = localStorage.getItem('theme');
+                glass = localStorage.getItem('theme_glass');
+            } catch (e) { /* хранилище заблокировано — используем настройки сервера */ }
+            if (saved && ['light', 'dark'].includes(saved)) {
+                document.documentElement.setAttribute('data-bs-theme', saved);
+            } else {
+                const serverDefault = '{{ theme.theme_default }}';
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                let theme = (serverDefault === 'system') ? (systemPrefersDark ? 'dark' : 'light') : serverDefault;
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            }
+            if (glass === 'true') {
+                document.documentElement.setAttribute('data-theme-glass', 'true');
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" integrity="sha384-HZZ/fukV+9G8gwTNjN7zQDG0Sp7MsZy5DDN6VfY3Be7V9dvQpEpR2jF2HlyFUUjU" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/toast.css">
+    <link rel="stylesheet" href="/static/css/base-overrides.css">
+    <link rel="stylesheet" href="/static/css/glass.css">
+    <link rel="stylesheet" href="/static/css/motion.css">
+
+    {% if theme.custom_css %}
+    <style>{{ theme.custom_css | safe }}</style>
+    {% endif %}
+
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <a href="{{ request.path }}?lang={{ 'en' if current_lang == 'ru' else 'ru' }}" class="lang-switch-btn">
+        {{ 'EN' if current_lang == 'ru' else 'RU' }}
+    </a>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    {% block content %}{% endblock %}
+
+    <!-- ✅ МОДАЛКА СМЕНЫ ПАРОЛЯ -->
+    <div class="modal fade" id="changePwdModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg pwd-modal-content">
+          <div class="modal-header border-0 pb-0">
+            <h4 class="modal-title fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-shield-lock-fill text-primary"></i> {{ t('change_password') }}
+            </h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" id="closePwdModalBtn" aria-label="{{ t('close') }}"></button>
+          </div>
+          <div class="modal-body p-4">
+            <form id="changePwdForm">
+
+              <div class="mb-4">
+                  <label class="form-label small fw-bold text-muted">{{ t('current_password') }}</label>
+                  <div class="pwd-input-group">
+                      <i class="bi bi-lock"></i>
+                      <input type="password" class="form-control" name="old_password" required placeholder="••••••••">
+                      <div class="caps-lock-warning" id="capsLockOld"><i class="bi bi-exclamation-triangle-fill"></i> Caps</div>
+                  </div>
+              </div>
+
+              <div class="mb-2">
+                  <label class="form-label small fw-bold text-muted">{{ t('new_password_label') }}</label>
+                  <div class="pwd-input-group">
+                      <i class="bi bi-key"></i>
+                      <input type="password" class="form-control" name="new_password" id="newPasswordInput" required minlength="8" placeholder="••••••••">
+                      <div class="caps-lock-warning" id="capsLockNew"><i class="bi bi-exclamation-triangle-fill"></i> Caps</div>
+                      <button type="button" class="btn-toggle-pwd" onclick="togglePwdVisibility('newPasswordInput', this)" aria-label="{{ t('show') }}" title="{{ t('show') }}">
+                          <i class="bi bi-eye"></i>
+                      </button>
+                  </div>
+              </div>
+
+              <div class="pwd-strength-wrapper mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                      <small class="text-muted" style="font-size: 0.75rem;">{{ t('strength') }}</small>
+                      <small id="pwd-strength-text" class="fw-bold" style="font-size: 0.75rem;"></small>
+                  </div>
+                  <div class="pwd-strength-track">
+                      <div id="pwd-strength-bar" class="pwd-strength-fill" style="width: 0%;"></div>
+                  </div>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label small fw-bold text-muted">{{ t('confirm_password') }}</label>
+                  <div class="pwd-input-group" id="confirmPwdGroup">
+                      <i class="bi bi-check-circle"></i>
+                      <input type="password" class="form-control" name="confirm_password" id="confirmPasswordInput" required placeholder="••••••••" oninput="checkPasswordMatch()">
+                      <div class="caps-lock-warning" id="capsLockConfirm"><i class="bi bi-exclamation-triangle-fill"></i> Caps</div>
+                  </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+            <a href="/logout" class="btn btn-outline-danger rounded-pill px-4" id="logoutPwdBtn" style="display: none;">
+                <i class="bi bi-box-arrow-right me-1"></i> {{ t('logout') }}
+            </a>
+            <div class="ms-auto">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal" id="cancelPwdBtn">{{ t('cancel') }}</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" id="changePwdBtn" onclick="submitChangePassword()">{{ t('save') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1060;"></div>
+
+    <div id="session-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index:2000; align-items:center; justify-content:center; color:#fff;">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status"></div>
+            <h4>{{ t('session_expiring') }}</h4>
+            <p class="mb-2">{{ t('session_text') }} <span id="logout-countdown">60</span>{{ t('seconds_short') }}.</p>
+            <button class="btn btn-light rounded-pill px-4 mt-2" onclick="extendSession()">
+                <i class="bi bi-arrow-clockwise me-1"></i> {{ t('continue_work') }}
+            </button>
+        </div>
+    </div>
+
+    {% if license.is_free %}
+    <div class="free-watermark">
+        {{ t('works_on') }} <strong>{{ theme.company }} Free</strong>.
+        
+    </div>
+    {% endif %}
+
+    <script>
+        window.__USER__ = {{ (session.get('user') or {}) | tojson }};
+        window.__THEME_DEFAULT__ = {{ theme.theme_default | tojson }};
+        window.__CURRENT_LANG__ = {{ current_lang | tojson }};
+        window.__FEATURES__ = {{ license.features | tojson }};
+        window.__T__ = {
+            last_login: {{ t('last_login') | tojson }},
+            filter_weak: {{ t('filter_weak') | tojson }},
+            filter_dup: {{ t('filter_dup') | tojson }},
+            filter_old: {{ t('filter_old') | tojson }},
+            filter_expiring: {{ t('filter_expiring') | tojson }},
+            filter_expired: {{ t('filter_expired') | tojson }},
+            insight_expiring: {{ t('insight_expiring') | tojson }},
+            insight_expired: {{ t('insight_expired') | tojson }},
+            badge_expired: {{ t('badge_expired') | tojson }},
+            badge_expires_in: {{ t('badge_expires_in') | tojson }},
+            days_short: {{ t('days_short') | tojson }},
+            empty_safe_title: {{ t('empty_safe_title') | tojson }},
+            empty_safe_desc: {{ t('empty_safe_desc') | tojson }},
+            nothing_found: {{ t('nothing_found') | tojson }},
+            reset_filters: {{ t('reset_filters') | tojson }},
+            new_password: {{ t('new_password') | tojson }},
+            tip_reuse: {{ t('tip_reuse') | tojson }},
+            login: {{ t('login') | tojson }},
+            password: {{ t('password') | tojson }},
+            edit: {{ t('edit') | tojson }},
+            delete: {{ t('delete') | tojson }},
+            save: {{ t('save') | tojson }},
+            cancel: {{ t('cancel') | tojson }},
+            select_staff: {{ t('select_staff') | tojson }},
+            all_passwords: {{ t('all_passwords') | tojson }},
+            no_filter_results: {{ t('no_filter_results') | tojson }},
+            session_expiring: {{ t('session_expiring') | tojson }},
+            session_text: {{ t('session_text') | tojson }},
+            continue_work: {{ t('continue_work') | tojson }},
+            works_on: {{ t('works_on') | tojson }},
+            upgrade_to_standard: {{ t('upgrade_to_standard') | tojson }},
+            pin: {{ t('pin') | tojson }},
+            unpin: {{ t('unpin') | tojson }},
+            add_fav: {{ t('add_fav') | tojson }},
+            remove_fav: {{ t('remove_fav') | tojson }},
+            share: {{ t('share') | tojson }},
+            history: {{ t('history') | tojson }},
+            service: {{ t('service') | tojson }},
+            category: {{ t('category') | tojson }},
+            url: {{ t('url') | tojson }},
+            notes: {{ t('notes') | tojson }},
+            updated: {{ ('Обновлено' if current_lang == 'ru' else 'Updated') | tojson }},
+            saved: {{ ('Сохранено' if current_lang == 'ru' else 'Saved') | tojson }},
+            fill_required: {{ ('Заполните обязательные поля' if current_lang == 'ru' else 'Fill required fields') | tojson }},
+            confirm_delete: {{ t('confirm_delete') | tojson }},
+            undo: {{ t('undo') | tojson }},
+            deleted_toast: {{ ('Пароль в корзине' if current_lang == 'ru' else 'Password moved to trash') | tojson }},
+            show: {{ t('show') | tojson }},
+            copy: {{ t('copy') | tojson }},
+            change_pwd: {{ t('change_pwd') | tojson }},
+            privacy_mode: {{ t('privacy_mode') | tojson }},
+            all_good: {{ t('all_good') | tojson }},
+            loaded_at: {{ t('loaded_at') | tojson }},
+            current_code: {{ t('current_code') | tojson }},
+            rotate_2fa: {{ t('rotate_2fa') | tojson }},
+            time: {{ t('time') | tojson }},
+            user: {{ t('user') | tojson }},
+            action: {{ t('action') | tojson }},
+            details: {{ t('details') | tojson }},
+            share_confirm: {{ t('share_confirm') | tojson }},
+            insight_weak: {{ ('слабых паролей' if current_lang == 'ru' else 'weak passwords') | tojson }},
+            insight_dup: {{ ('паролей повторяются' if current_lang == 'ru' else 'duplicate passwords') | tojson }},
+            insight_old: {{ ('паролей не менялись >90 дней' if current_lang == 'ru' else 'passwords older than 90 days') | tojson }},
+            score_good: {{ ('Отлично!' if current_lang == 'ru' else 'Excellent!') | tojson }},
+            score_mid: {{ ('Средне' if current_lang == 'ru' else 'Average') | tojson }},
+            score_bad: {{ ('Плохо' if current_lang == 'ru' else 'Bad') | tojson }},
+            score_perfect: {{ ('Индекс безопасности 100!' if current_lang == 'ru' else 'Security Score 100!') | tojson }},
+            passwords_hidden: {{ ('Пароли скрыты' if current_lang == 'ru' else 'Passwords hidden') | tojson }},
+            select_file: {{ ('Выберите файл' if current_lang == 'ru' else 'Select file') | tojson }},
+            file_empty: {{ ('Файл пуст' if current_lang == 'ru' else 'File is empty') | tojson }},
+            passwords_not_found: {{ ('Пароли не найдены' if current_lang == 'ru' else 'No passwords found') | tojson }},
+            parse_error: {{ ('Ошибка парсинга' if current_lang == 'ru' else 'Parse error') | tojson }},
+            generated: {{ ('Сгенерировано' if current_lang == 'ru' else 'Generated') | tojson }},
+            copied: {{ ('Скопировано' if current_lang == 'ru' else 'Copied') | tojson }},
+            clear_now: {{ ('Сейчас' if current_lang == 'ru' else 'Now') | tojson }},
+            clipboard_cleared: {{ ('Буфер очищен' if current_lang == 'ru' else 'Clipboard cleared') | tojson }},
+            confirm_share: {{ ('Создать ссылку?' if current_lang == 'ru' else 'Create link?') | tojson }},
+            share_copied: {{ ('Ссылка скопирована' if current_lang == 'ru' else 'Link copied') | tojson }},
+            no_link: {{ ('Нет ссылки' if current_lang == 'ru' else 'No link') | tojson }},
+            history_empty: {{ ('История пуста' if current_lang == 'ru' else 'History is empty') | tojson }},
+            pwd_change: {{ ('Смена пароля' if current_lang == 'ru' else 'Password change') | tojson }},
+            fields_change: {{ ('Изменение полей' if current_lang == 'ru' else 'Fields change') | tojson }},
+            hibp_unavailable: {{ ('Проверка недоступна' if current_lang == 'ru' else 'Check unavailable') | tojson }},
+            pwned: {{ ('Пароль в утечках!' if current_lang == 'ru' else 'Password leaked!') | tojson }},
+            login_copied: {{ ('Логин скопирован' if current_lang == 'ru' else 'Login copied') | tojson }},
+            password_copied: {{ ('Пароль скопирован' if current_lang == 'ru' else 'Password copied') | tojson }},
+            server_error: {{ ('Сервер не отвечает.' if current_lang == 'ru' else 'Server not responding.') | tojson }},
+            decryption_error: {{ ('<ошибка>' if current_lang == 'ru' else '<error>') | tojson }},
+            error: {{ t('error') | tojson }},
+            network_error: {{ t('network_error') | tojson }},
+            exported: {{ t('exported') | tojson }},
+
+            failed_attempts: {{ ('Ошибок входа' if current_lang == 'ru' else 'Failed logins') | tojson }},
+            recent_actions: {{ ('Последние действия' if current_lang == 'ru' else 'Recent actions') | tojson }},
+            no_logs: {{ ('Нет логов' if current_lang == 'ru' else 'No logs') | tojson }},
+            created_by: {{ ('Создал' if current_lang == 'ru' else 'Created by') | tojson }},
+            confirm_reset: {{ ('Сбросить?' if current_lang == 'ru' else 'Reset?') | tojson }},
+            reset_done: {{ ('Форма сброшена.' if current_lang == 'ru' else 'Form reset.') | tojson }},
+            invalid_color: {{ ('Неверный цвет' if current_lang == 'ru' else 'Invalid color') | tojson }},
+            invalid_url: {{ ('Неверный URL' if current_lang == 'ru' else 'Invalid URL') | tojson }},
+            privacy_on: {{ ('Приватность ВКЛ' if current_lang == 'ru' else 'Privacy ON') | tojson }},
+            removed_fav: {{ ('Убрано' if current_lang == 'ru' else 'Removed') | tojson }},
+            added_fav: {{ ('Добавлено' if current_lang == 'ru' else 'Added') | tojson }},
+            pinned: {{ ('Закреплено' if current_lang == 'ru' else 'Pinned') | tojson }},
+            unpinned: {{ ('Откреплено' if current_lang == 'ru' else 'Unpinned') | tojson }},
+            role_admin: {{ t('role_admin') | tojson }},
+            role_manager: {{ t('role_manager') | tojson }},
+            role_user: {{ t('role_user') | tojson }},
+            blocked: {{ t('blocked') | tojson }},
+            attempts: {{ t('attempts') | tojson }},
+            banned_until: {{ t('banned_until') | tojson }},
+            no_banned_ips: {{ t('no_banned_ips') | tojson }},
+            unban: {{ t('unban') | tojson }},
+            users: {{ t('users') | tojson }},
+            passwords: {{ t('passwords') | tojson }},
+            owner: {{ t('owner') | tojson }},
+            updated_label: {{ t('updated') | tojson }},
+            show_btn: {{ ('Показать' if current_lang == 'ru' else 'Show') | tojson }},
+            import_users: {{ ('Импортировать' if current_lang == 'ru' else 'Import') | tojson }},
+            add_user: {{ ('Добавить' if current_lang == 'ru' else 'Add') | tojson }},
+            create_folder: {{ ('Создать' if current_lang == 'ru' else 'Create') | tojson }},
+            success: {{ t('success') | tojson }},
+            no_passwords: {{ t('no_passwords') | tojson }},
+            no_users: {{ t('no_users') | tojson }},
+            no_vaults: {{ t('no_vaults') | tojson }},
+            page_prev: {{ t('page_prev') | tojson }},
+            page_next: {{ t('page_next') | tojson }},
+            page_of: {{ t('page_of') | tojson }},
+            confirm_delete_target: {{ t('confirm_delete_target') | tojson }},
+
+            trash_desc: {{ t('trash_desc') | tojson }},
+            clear_all: {{ t('clear_all') | tojson }},
+            trash_empty: {{ t('trash_empty') | tojson }},
+            deleted: {{ t('deleted') | tojson }},
+            left: {{ t('left') | tojson }},
+            days: {{ t('days') | tojson }},
+            restore: {{ t('restore') | tojson }},
+            purge: {{ t('purge') | tojson }},
+            restored: {{ t('restored') | tojson }},
+            confirm_purge: {{ t('confirm_purge') | tojson }},
+            confirm_purge_all: {{ t('confirm_purge_all') | tojson }},
+            purge_record_prompt: {{ t('purge_record_prompt') | tojson }},
+            purge_will_deleted: {{ t('purge_will_deleted') | tojson }},
+            purged: {{ t('purged') | tojson }},
+            trash_cleared: {{ t('trash_cleared') | tojson }},
+            purge_failed: {{ t('purge_failed') | tojson }},
+            invalid_license_code: {{ t('invalid_license_code') | tojson }},
+            license_code_required: {{ t('license_code_required') | tojson }},
+            admin_panel: {{ t('admin_panel') | tojson }},
+            import: {{ t('import') | tojson }},
+            logs: {{ t('logs') | tojson }},
+            trash: {{ t('trash') | tojson }},
+            license_server_url: {{ t('license_server_url') | tojson }},
+            license_server_status: {{ t('license_server_status') | tojson }},
+            license_server_status_online: {{ t('license_server_status_online') | tojson }},
+            license_server_status_cache: {{ t('license_server_status_cache') | tojson }},
+            license_server_status_free: {{ t('license_server_status_free') | tojson }},
+            license_server_status_pending: {{ t('license_server_status_pending') | tojson }},
+            license_server_ago: {{ t('license_server_ago') | tojson }},
+            seconds_short: {{ t('seconds_short') | tojson }},
+            minutes_short: {{ t('minutes_short') | tojson }},
+            hours_short: {{ t('hours_short') | tojson }},
+            license_server_ok: {{ t('license_server_ok') | tojson }},
+            license_server_partial: {{ t('license_server_partial') | tojson }},
+            license_server_source_config: {{ t('license_server_source_config') | tojson }},
+            license_server_source_env: {{ t('license_server_source_env') | tojson }},
+            license_server_probe: {{ t('license_server_probe') | tojson }},
+            license_server_probe_known: {{ t('license_server_probe_known') | tojson }},
+            license_server_probe_unknown: {{ t('license_server_probe_unknown') | tojson }},
+            license_server_probe_missing: {{ t('license_server_probe_missing') | tojson }},
+            license_server_probe_error: {{ t('license_server_probe_error') | tojson }},
+            license_server_confirm_unknown: {{ t('license_server_confirm_unknown') | tojson }},
+            all: {{ t('all') | tojson }},
+            uncategorized: {{ t('uncategorized') | tojson }},
+            milliseconds_short: {{ t('milliseconds_short') | tojson }},
+            license_error_revoked: {{ t('license_error_revoked') | tojson }},
+            license_error_expired: {{ t('license_error_expired') | tojson }},
+            license_error_bad_secret: {{ t('license_error_bad_secret') | tojson }},
+            license_error_unknown: {{ t('license_error_unknown') | tojson }},
+            license_error_invalid: {{ t('license_error_invalid') | tojson }},
+            license_error_network: {{ t('license_error_network') | tojson }},
+            bootstrap_not_loaded: {{ t('bootstrap_not_loaded') | tojson }},
+            password_mismatch: {{ t('password_mismatch') | tojson }},
+            password_too_short: {{ t('password_too_short') | tojson }},
+            enter_current_password: {{ t('enter_current_password') | tojson }},
+            password_changed: {{ t('password_changed') | tojson }},
+            must_change_password: {{ t('must_change_password') | tojson }},
+            password_min_length: {{ t('password_min_length') | tojson }},
+            password_reset_ok: {{ t('password_reset_ok') | tojson }},
+            password_reset_failed: {{ t('password_reset_failed') | tojson }},
+            password_updated_copied: {{ t('password_updated_copied') | tojson }},
+            password_updated_manual: {{ t('password_updated_manual') | tojson }},
+            order_saved: {{ t('order_saved') | tojson }},
+            order_save_failed: {{ t('order_save_failed') | tojson }},
+            delete_record_desc: {{ t('delete_record_desc') | tojson }},
+            strength_weak: {{ t('strength_weak') | tojson }},
+            strength_medium: {{ t('strength_medium') | tojson }},
+            strength_strong: {{ t('strength_strong') | tojson }},
+            open_link: {{ t('open_link') | tojson }},
+            password_unchanged: {{ t('password_unchanged') | tojson }},
+            qr_code: {{ t('qr_code') | tojson }},
+            copy_login: {{ t('copy_login') | tojson }},
+            copy_password: {{ t('copy_password') | tojson }},
+            generate_new: {{ t('generate_new') | tojson }},
+            print: {{ t('print') | tojson }},
+            search_no_results: {{ t('search_no_results') | tojson }},
+            privacy: {{ t('privacy') | tojson }},
+            show_hide: {{ t('show_hide') | tojson }},
+            custom_css_hint: {{ t('custom_css_hint') | tojson }},
+            load_error: {{ t('load_error') | tojson }},
+            timeout_error: {{ t('timeout_error') | tojson }},
+            load_failed: {{ t('load_failed') | tojson }},
+
+            security_center: {{ t('security_center') | tojson }},
+            overview: {{ t('overview') | tojson }},
+            notifications: {{ t('notifications') | tojson }},
+            shared_links: {{ t('shared_links') | tojson }},
+            api_tokens: {{ t('api_tokens') | tojson }},
+            issues: {{ t('issues') | tojson }},
+            issue: {{ t('issue') | tojson }},
+            healthy: {{ t('healthy') | tojson }},
+            severity: {{ t('severity') | tojson }},
+            security_issues: {{ t('security_issues') | tojson }},
+            loading: {{ t('loading') | tojson }},
+            mark_all_read: {{ t('mark_all_read') | tojson }},
+            mark_read: {{ t('mark_read') | tojson }},
+            no_notifications: {{ t('no_notifications') | tojson }},
+            two_factor: {{ t('two_factor') | tojson }},
+            two_factor_hint: {{ t('two_factor_hint') | tojson }},
+            totp_code: {{ t('totp_code') | tojson }},
+            recovery_code_hint: {{ t('recovery_code_hint') | tojson }},
+            verify: {{ t('verify') | tojson }},
+            setup_2fa: {{ t('setup_2fa') | tojson }},
+            secret_key: {{ t('secret_key') | tojson }},
+            enable_2fa: {{ t('enable_2fa') | tojson }},
+            recovery_warning: {{ t('recovery_warning') | tojson }},
+            disable_2fa: {{ t('disable_2fa') | tojson }},
+            disable_2fa_desc: {{ t('disable_2fa_desc') | tojson }},
+            totp_or_recovery: {{ t('totp_or_recovery') | tojson }},
+            totp_enabled: {{ t('totp_enabled') | tojson }},
+            totp_disabled: {{ t('totp_disabled') | tojson }},
+            token_name: {{ t('token_name') | tojson }},
+            token_days: {{ t('token_days') | tojson }},
+            create_token: {{ t('create_token') | tojson }},
+            token_once: {{ t('token_once') | tojson }},
+            token_created: {{ t('token_created') | tojson }},
+            no_tokens: {{ t('no_tokens') | tojson }},
+            never: {{ t('never') | tojson }},
+            access_log: {{ t('access_log') | tojson }},
+            views: {{ t('views') | tojson }},
+            status: {{ t('status') | tojson }},
+            active: {{ t('active') | tojson }},
+            inactive: {{ t('inactive') | tojson }},
+            revoked: {{ t('revoked') | tojson }},
+            revoke: {{ t('revoke') | tojson }},
+            no_shares: {{ t('no_shares') | tojson }},
+            sharing_paid: {{ t('sharing_paid') | tojson }},
+            expires: {{ t('expires') | tojson }},
+            created: {{ t('created') | tojson }},
+            last_used: {{ t('last_used') | tojson }},
+            logs_filter: {{ t('logs_filter') | tojson }},
+            date_from: {{ t('date_from') | tojson }},
+            date_to: {{ t('date_to') | tojson }},
+            all_users: {{ t('all_users') | tojson }},
+            export_logs: {{ t('export_logs') | tojson }},
+            backups: {{ t('backups') | tojson }},
+            backup: {{ t('backup') | tojson }},
+            create_backup: {{ t('create_backup') | tojson }},
+            restore_backup: {{ t('restore_backup') | tojson }},
+            restore_backup_confirm: {{ t('restore_backup_confirm') | tojson }},
+            no_backups: {{ t('no_backups') | tojson }},
+            backup_paid: {{ t('backup_paid') | tojson }},
+            backup_warning: {{ t('backup_warning') | tojson }},
+            share_password: {{ t('share_password') | tojson }},
+            share_password_hint: {{ t('share_password_hint') | tojson }},
+            max_views: {{ t('max_views') | tojson }},
+            one_time: {{ t('one_time') | tojson }},
+            hours: {{ t('hours') | tojson }},
+            unlock: {{ t('unlock') | tojson }},
+            wrong_share_password: {{ t('wrong_share_password') | tojson }},
+            export_format: {{ t('export_format') | tojson }},
+            export_filter: {{ t('export_filter') | tojson }},
+            export_options: {{ t('export_options') | tojson }},
+            export_warning: {{ t('export_warning') | tojson }},
+            theme: {{ t('theme') | tojson }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="/static/js/motion.js"></script>
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/idle.js"></script>
+    <script src="/static/js/change-pwd.js"></script>
+    {% block scripts %}{% endblock %}
+
+    {% if session.get('user', {}).get('must_change_password') and request.path not in ['/login', '/'] %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => window.showChangePasswordModal(true), 500);
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

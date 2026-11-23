@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sign_in') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/login.css">
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card text-center">
+
+        <div class="login-logo">
+            {% if theme.logo_url %}
+            <img src="{{ theme.logo_url }}" alt="{{ theme.company }}">
+            {% elif theme.logo_text %}
+            <span class="fw-bold" style="font-size:1.5rem;">{{ theme.logo_text }}</span>
+            {% else %}
+            <i class="bi bi-shield-lock-fill"></i>
+            {% endif %}
+        </div>
+
+        <h3 class="fw-bold mb-2" style="letter-spacing: -1px;">{{ theme.company }}</h3>
+        <p class="text-muted mb-4">{{ t('login_desc') }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-2 px-3 small border-0 d-flex align-items-center justify-content-between mb-3" style="border-radius: 12px;" role="alert">
+                    <span>{{ message }}</span>
+                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close" style="position: relative; right: 0; top: 0; padding: 0.5rem; font-size: 0.7rem;"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="/login" class="text-start" id="loginForm">
+            {% if totp_required %}
+            <input type="hidden" name="username" value="{{ pending_username or '' }}">
+            <div class="alert alert-info border-0 small mb-3" style="border-radius: 12px;">
+                <i class="bi bi-shield-check me-2"></i> {{ t('two_factor_hint') }}
+            </div>
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted ms-1">{{ t('totp_code') }}</label>
+                <div class="input-group-custom">
+                    <div class="input-icon"><i class="bi bi-123"></i></div>
+                    <input type="text" inputmode="numeric" pattern="[0-9A-Za-z-]*" maxlength="40"
+                           class="input-custom" name="totp_code" placeholder="000000" required autofocus autocomplete="one-time-code">
+                </div>
+                <div class="form-text ms-1">{{ t('recovery_code_hint') }}</div>
+            </div>
+            <button type="submit" class="btn btn-login" id="loginBtn">
+                <i class="bi bi-shield-check me-2"></i> {{ t('verify') }}
+            </button>
+            <a href="/login" class="btn btn-link w-100 mt-2 small">{{ t('cancel') }}</a>
+            {% else %}
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-muted ms-1">{{ t('username') }}</label>
+                <div class="input-group-custom">
+                    <div class="input-icon"><i class="bi bi-person"></i></div>
+                    <input type="text" class="input-custom" name="username" placeholder="{{ t('username_placeholder') }}" required autofocus autocomplete="username">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted ms-1">{{ t('password') }}</label>
+                <div class="input-group-custom">
+                    <div class="input-icon"><i class="bi bi-key"></i></div>
+                    <input type="password" class="input-custom" name="password" placeholder="{{ t('password_placeholder') }}" required autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-login" id="loginBtn">
+                <i class="bi bi-box-arrow-in-right me-2"></i> {{ t('sign_in') }}
+            </button>
+            {% endif %}
+        </form>
+
+        {% if sso and sso.enabled and not totp_required %}
+        <div class="mt-4 pt-3 border-top" style="border-color: var(--border-color) !important;">
+            <div class="text-muted small mb-3">{{ t('sso_divider') }}</div>
+            {% if sso.mode == 'ldap' %}
+            <form method="POST" action="/login/ldap" class="text-start" id="ldapLoginForm">
+                <div class="input-group-custom mb-2">
+                    <div class="input-icon"><i class="bi bi-person-badge"></i></div>
+                    <input type="text" class="input-custom" name="username" placeholder="{{ t('sso_username') }}" required autocomplete="username">
+                </div>
+                <div class="input-group-custom mb-3">
+                    <div class="input-icon"><i class="bi bi-key"></i></div>
+                    <input type="password" class="input-custom" name="password" placeholder="{{ t('password') }}" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-login"><i class="bi bi-diagram-3 me-2"></i> {{ sso.label }}</button>
+            </form>
+            {% elif sso.mode == 'oidc' %}
+            <a href="/login/oidc" class="btn btn-login"><i class="bi bi-box-arrow-in-right me-2"></i> {{ sso.label }}</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="mt-4 pt-3 border-top" style="border-color: var(--border-color) !important;">
+            <p class="text-muted small mb-0">{{ t('forgot_password') }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/login.js"></script>
+{% endblock %}

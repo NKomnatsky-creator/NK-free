@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}{{ t('dashboard') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/dashboard.css">
+<style>
+    /* Дополнительные стили для прогресс-баров в сайдбаре */
+    .cat-pill { position: relative; overflow: hidden; z-index: 1; }
+    .cat-pill .cat-bg { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brand-light); z-index: -1; transition: width 0.3s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="p-4 d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; overflow: hidden;">
+                {% if theme.logo_url %}<img src="{{ theme.logo_url }}" alt="" style="width:100%;height:100%;object-fit:contain;">
+                {% elif theme.logo_text %}<span class="fw-bold" style="font-size:0.85rem;">{{ theme.logo_text }}</span>
+                {% else %}<i class="bi bi-shield-lock-fill fs-5"></i>{% endif %}
+            </div>
+            <span class="fs-4 fw-bold" style="letter-spacing: -1px;">{{ theme.company }}</span>
+            <button class="btn btn-light d-lg-none ms-auto p-2" onclick="closeSidebar()" aria-label="{{ t('close') }}" title="{{ t('close') }}" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-4 mb-4">
+            <button class="btn btn-primary w-100 py-3" onclick="showAddModal()"><i class="bi bi-plus-lg me-2"></i> {{ t('new_password') }}</button>
+        </div>
+
+        <div class="px-4 text-muted fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;">{{ t('actions') }}</div>
+        <div class="px-2 mb-3">
+            <a href="/trash" class="nav-item-custom"><i class="bi bi-trash3"></i> {{ t('trash') }}</a>
+            <a href="/security" class="nav-item-custom"><i class="bi bi-shield-check"></i> {{ t('security_center') }}</a>
+        </div>
+
+        {% if user.role in ('admin', 'manager') %}
+        <div class="px-4 text-muted fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;">{{ t('management') }}</div>
+        <div class="px-2 mb-3">
+            <a href="/admin" class="nav-item-custom"><i class="bi bi-gear-fill"></i> {{ t('admin_panel') }}</a>
+            <a href="/logs" class="nav-item-custom"><i class="bi bi-list-ul"></i> {{ t('logs') }}</a>
+        </div>
+        {% endif %}
+
+        <div class="px-4 text-muted fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;">{{ t('spaces') }}</div>
+        <div class="flex-grow-1 overflow-auto px-2" id="category-list"></div>
+
+        <div class="p-3 border-top" style="border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-4" style="background: var(--bg-base);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: var(--brand-light); color: var(--brand);"><i class="bi bi-person-fill"></i></div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.9rem;">{{ user.username }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">{% if user.role == 'admin' %}{{ t('role_admin') }}{% elif user.role == 'manager' %}{{ t('role_manager') }}{% else %}{{ t('role_user') }}{% endif %}</div>
+                        
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn" onclick="toggleTheme()" aria-label="{{ t('theme') }}" title="{{ t('theme') }}"><i class="bi bi-moon-stars-fill theme-toggle-icon"></i></button>
+                    <a href="/logout" class="action-btn text-danger" aria-label="{{ t('logout') }}" title="{{ t('logout') }}"><i class="bi bi-box-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content w-100 fade-in-up">
+        <!-- Обновленная шапка -->
+        <div class="topbar dashboard-topbar align-items-start align-items-lg-center flex-column flex-lg-row gap-3">
+            <div class="d-flex align-items-center gap-3 w-100 w-lg-auto">
+                <button class="btn btn-light d-lg-none shadow-sm p-2" onclick="toggleSidebar()" aria-label="{{ t('menu') }}" title="{{ t('menu') }}" style="width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-list fs-4"></i></button>
+                <div>
+                    <h2 class="mb-0 fw-bold" style="letter-spacing: -1px;" id="current-category-title">{{ t('all_passwords') }}</h2>
+                    <div class="text-muted small mt-1" id="last-login-info"></div>
+                </div>
+            </div>
+
+            <!-- Правая часть шапки -->
+            <div class="dashboard-header-actions d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2 w-100 w-lg-auto">
+
+                {% if user.role in ('admin', 'manager') %}
+                <div class="owner-filter-wrap flex-grow-1 flex-sm-grow-0" style="min-width: 150px;">
+                    <button class="custom-select-btn w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="ownerFilterBtn">
+                        <span id="ownerFilterLabel" class="fw-medium text-truncate">{{ t('select_staff') }}</span>
+                        <i class="bi bi-chevron-down text-muted ms-2" style="font-size: 0.8rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow-sm" id="ownerFilterMenu" style="border-radius: 12px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); background: var(--bg-solid);"></ul>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Иконки -->
+                    <div class="d-flex gap-2 flex-shrink-0">
+                        <button class="btn btn-outline-secondary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;" id="toggle-privacy-btn" onclick="togglePrivacyMode()" title="{{ t('privacy') }}">
+                            <i class="bi bi-incognito" id="privacy-icon"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;" id="toggle-all-btn" onclick="toggleAllPasswords()" title="{{ t('show_hide') }}">
+                            <i class="bi bi-eye-slash" id="toggle-all-icon"></i>
+                        </button>
+                        <a href="/print/passwords" target="_blank" class="btn btn-outline-secondary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;" title="{{ t('print') }}">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                    </div>
+
+                    <!-- Импорт/Экспорт -->
+                    <div class="d-flex gap-2 flex-grow-1 flex-sm-grow-0">
+                        <button class="btn btn-outline-secondary flex-grow-1 text-nowrap d-flex align-items-center justify-content-center gap-2 px-3" style="height: 44px;" onclick="showImportModal()">
+                            <i class="bi bi-upload"></i> <span>{{ t('import') }}</span>
+                        </button>
+                        <button type="button" id="exportBtn" onclick="exportPasswords()" class="btn btn-outline-success flex-grow-1 text-nowrap d-flex align-items-center justify-content-center gap-2 px-3" style="height: 44px;">
+                            <i class="bi bi-download"></i> <span>{{ t('export') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="insights-container" class="mb-3"></div>
+
+        <div class="row g-3 mb-4" id="security-dashboard" style="display: none;">
+            <div class="col-12 col-md-6">
+                <div class="glass-card p-3 d-flex align-items-center gap-4">
+                    <div class="position-relative">
+                        <svg width="70" height="70" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
+                            <path id="score-ring" class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" />
+                        </svg>
+                        <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-5 text-center" style="line-height: 1;">
+                            <span id="score-text">0</span><div class="text-muted" style="font-size: 0.5rem; margin-top: 2px;">/ 100</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="mb-1 fw-bold">{{ t('security_index') }}</h5>
+                        <p class="text-muted mb-0 small" id="score-desc">...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="glass-card p-3 d-flex align-items-center justify-content-around h-100">
+                    <div class="text-center"><div class="fs-3 fw-bold text-danger" id="stat-weak">0</div><small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">{{ t('weak') }}</small></div>
+                    <div class="text-center"><div class="fs-3 fw-bold text-warning" id="stat-dup">0</div><small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">{{ t('duplicates') }}</small></div>
+                    <div class="text-center"><div class="fs-3 fw-bold text-info" id="stat-old">0</div><small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">{{ t('old') }}</small></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-wrapper mb-2">
+            <i class="bi bi-search search-icon-abs"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="{{ t('search') }} (Ctrl+K)" oninput="filterPasswordsDebounced()">
+        </div>
+
+        <div class="filter-chips" id="filterChips"></div>
+
+        <div id="error-alert" class="alert alert-danger rounded-4 shadow-sm force-hidden">
+            <h5 class="mb-1"><i class="bi bi-exclamation-triangle-fill"></i> {{ t('error') }}</h5>
+            <p id="error-message" class="mb-2"></p>
+            <button class="btn btn-sm btn-outline-danger" onclick="loadPasswords()">{{ t('retry') }}</button>
+        </div>
+
+        <div id="skeleton-loading" class="force-hidden">
+            <div class="glass-card p-3 d-flex gap-3 mb-3"><div class="skeleton-pulse" style="width: 48px; height: 48px; border-radius: 14px;"></div><div class="flex-grow-1"><div class="skeleton-pulse mb-2" style="width: 30%; height: 20px;"></div><div class="skeleton-pulse" style="width: 50%; height: 14px;"></div></div></div>
+            <div class="glass-card p-3 d-flex gap-3"><div class="skeleton-pulse" style="width: 48px; height: 48px; border-radius: 14px;"></div><div class="flex-grow-1"><div class="skeleton-pulse mb-2" style="width: 30%; height: 20px;"></div><div class="skeleton-pulse" style="width: 50%; height: 14px;"></div></div></div>
+        </div>
+
+        <div id="passwords-container" class="force-hidden"></div>
+
+        <div id="no-passwords" class="text-center py-5 force-hidden">
+            <div class="empty-icon-wrap"><i class="bi bi-safe" id="empty-icon"></i></div>
+            <h3 class="fw-bold mt-3" id="empty-title">{{ t('empty_safe_title') }}</h3>
+            <p class="text-muted mb-4" id="empty-desc" style="max-width: 400px; margin: 0 auto;">{{ t('empty_safe_desc') }}</p>
+            <button class="btn btn-primary px-4" id="empty-action" onclick="showAddModal()"><i class="bi bi-plus-lg me-1"></i> {{ t('new_password') }}</button>
+            <div class="mt-3 text-muted small" id="empty-import-hint">{{ t('have_passwords') }} <button type="button" onclick="showImportModal()" class="btn btn-link p-0 align-baseline text-decoration-none fw-bold">{{ t('import') }}</button></div>
+            <div class="mt-4 pt-3 text-muted small" style="max-width: 400px; margin: 0 auto;" id="empty-tip">💡 {{ t('tip_reuse') }}</div>
+        </div>
+    </main>
+</div>
+
+<button class="fab-add" onclick="showAddModal()" title="{{ t('new_password') }}"><i class="bi bi-plus-lg"></i></button>
+
+<!-- Модалка добавления/редактирования -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('new_password') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+      <div class="modal-body p-4">
+        <form id="addForm">
+          <input type="hidden" name="id" id="editId">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted" for="addServiceName">{{ t('service_name') }} *</label>
+            <input type="text" class="form-control form-control-lg" name="service_name" id="addServiceName" required placeholder="Google, GitHub...">
+          </div>
+          <div class="row mb-3">
+            <div class="col-12 col-sm-6 mb-3 mb-sm-0">
+              <label class="form-label small fw-bold text-muted" for="addCategory">{{ t('category') }}</label>
+              <input type="text" class="form-control" name="category" id="addCategory" list="category-list-data" placeholder="...">
+              <datalist id="category-list-data"></datalist>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-bold text-muted" for="addExpires">{{ t('valid_until') }}</label>
+              <input type="date" class="form-control" name="expires_at" id="addExpires">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted" for="addUsername">{{ t('login') }} *</label>
+            <input type="text" class="form-control" name="username" id="addUsername" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted" for="passwordInput">{{ t('password') }} *</label>
+            <div class="input-group">
+              <input type="password" class="form-control form-control-lg" id="passwordInput" name="password" required oninput="checkHIBP(this.value)">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('passwordInput', this)" title="Show"><i class="bi bi-eye"></i></button>
+              <button class="btn btn-outline-primary" type="button" onclick="openGenerator('passwordInput')" title="Generate"><i class="bi bi-shuffle"></i></button>
+            </div>
+            <div id="hibp-warning" class="alert alert-danger py-1 px-2 mt-2 mb-0" style="display:none; font-size:0.8rem;"></div>
+            <div id="hibp-success" class="alert alert-success py-1 px-2 mt-2 mb-0" style="display:none; font-size:0.8rem;"><i class="bi bi-shield-check"></i> {{ t('secure') }}</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted" for="addUrl">{{ t('url') }}</label>
+            <input type="url" class="form-control" name="url" id="addUrl" placeholder="https://...">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold text-muted" for="addNotes">{{ t('notes') }}</label>
+            <textarea class="form-control" name="notes" id="addNotes" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+        <button type="button" class="btn btn-primary px-4" id="saveBtn" onclick="submitForm()">{{ t('save') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка подтверждения удаления -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg text-center" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-body p-4">
+        <div class="display-4 text-danger mb-3"><i class="bi bi-trash"></i></div>
+        <h4 class="fw-bold mb-2">{{ t('confirm_delete_title') }}</h4>
+        <p class="text-muted mb-4" id="confirmDeleteText">{{ t('confirm_delete_desc') }}</p>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light flex-grow-1" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+            <button type="button" class="btn btn-danger flex-grow-1" id="confirmDeleteBtn">{{ t('delete') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Параметры новой общей ссылки -->
+<div class="modal fade" id="shareOptionsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">{{ t('shared_links') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="sharePasswordId">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label small fw-bold">{{ t('hours') }}</label><input type="number" id="shareHours" class="form-control" value="24" min="1" max="720"></div>
+          <div class="col-md-6"><label class="form-label small fw-bold">{{ t('max_views') }}</label><input type="number" id="shareMaxViews" class="form-control" value="0" min="0" max="1000"></div>
+          <div class="col-12"><label class="form-label small fw-bold">{{ t('share_password') }}</label><input type="text" id="shareLinkPassword" class="form-control" maxlength="200" autocomplete="off"><div class="form-text">{{ t('share_password_hint') }}</div></div>
+          <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shareOneTime"><label class="form-check-label small" for="shareOneTime">{{ t('one_time') }}</label></div></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary" onclick="confirmShare()">{{ t('share') }}</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка для отображения созданной ссылки -->
+<div class="modal fade" id="shareLinkModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-body p-4 text-center">
+        <div class="display-4 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
+        <h4 class="fw-bold mb-2">{{ t('link_created') }}</h4>
+        <p class="text-muted mb-4">{{ t('one_time_link_hint') }}</p>
+        <div class="input-group mb-4">
+            <input type="text" class="form-control font-monospace" id="shareLinkInput" readonly onclick="this.select()">
+            <button class="btn btn-primary" type="button" onclick="copyShareLink()" id="copyShareBtn"><i class="bi bi-copy me-1"></i> {{ t('copy') }}</button>
+        </div>
+        <button type="button" class="btn btn-light w-100" data-bs-dismiss="modal">{{ t('close') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Параметры экспорта -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">{{ t('export_options') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+      <div class="modal-body p-4">
+        <div class="mb-3">
+          <label class="form-label small fw-bold">{{ t('export_format') }}</label>
+          <select id="exportFormat" class="form-select"><option value="csv">CSV</option><option value="json">JSON</option></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">{{ t('export_filter') }}</label>
+          <select id="exportFilter" class="form-select">
+            <option value="all">{{ t('all_passwords') }}</option>
+            <option value="leaks">{{ t('leaks_only') }}</option>
+            <option value="old">{{ t('filter_old') }}</option>
+          </select>
+        </div>
+        <div class="alert alert-warning small border-0 mb-0">{{ t('export_warning') }}</div>
+      </div>
+      <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary" onclick="performExport()">{{ t('export') }}</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Импорт, QR, История, Генератор, Cmd Palette -->
+<div class="modal fade" id="importModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);"><div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('import') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><div class="modal-body p-4"><p class="text-muted mb-4">{{ t('import_desc') }}</p><input type="file" class="form-control" id="csvFileInput" accept=".csv,.json"></div><div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary px-4" id="importBtn" onclick="startImport()">{{ t('import') }}</button></div></div></div></div>
+<div class="modal fade" id="qrModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow-lg text-center" style="border-radius: var(--radius-modal); background: var(--bg-solid);"><div class="modal-body p-4"><img id="qrImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="QR" class="img-fluid rounded-4 border mb-3"><button class="btn btn-light w-100" data-bs-dismiss="modal">{{ t('close') }}</button></div></div></div></div>
+<div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);"><div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('history') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><div class="modal-body p-4" id="historyList"></div></div></div></div>
+<div class="modal fade" id="generatorModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);"><div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold"><i class="bi bi-shuffle me-2"></i>{{ t('generator') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div><div class="modal-body p-4"><div class="mb-3"><label class="form-label small fw-bold text-muted d-flex justify-content-between" for="gen-length"><span>{{ t('length') }}</span><span id="gen-length-val" class="text-primary fw-bold">18</span></label><input type="range" class="form-range" id="gen-length" min="8" max="64" value="18" oninput="document.getElementById('gen-length-val').textContent=this.value; generatePassword();"></div><div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="gen-upper" checked onchange="generatePassword()"><label class="form-check-label small" for="gen-upper">{{ t('uppercase') }}</label></div><div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="gen-lower" checked onchange="generatePassword()"><label class="form-check-label small" for="gen-lower">{{ t('lowercase') }}</label></div><div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="gen-digits" checked onchange="generatePassword()"><label class="form-check-label small" for="gen-digits">{{ t('digits') }}</label></div><div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="gen-symbols" checked onchange="generatePassword()"><label class="form-check-label small" for="gen-symbols">{{ t('symbols') }}</label></div><div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="gen-nosimilar" checked onchange="generatePassword()"><label class="form-check-label small" for="gen-nosimilar">{{ t('no_similar') }}</label></div><div class="input-group mb-2"><input type="text" class="form-control font-monospace" id="gen-result" readonly onclick="this.select()"><button class="btn btn-outline-secondary" type="button" onclick="copyGenerated()" title="Copy"><i class="bi bi-copy"></i></button></div><div class="text-center mb-2"><small class="text-muted">{{ t('strength') }}: <span id="gen-strength" class="fw-bold">—</span></small></div></div><div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('close') }}</button><button type="button" class="btn btn-primary px-4" onclick="useGenerated()">{{ t('use') }}</button></div></div></div></div>
+<div class="modal fade" id="cmdPaletteModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);"><div class="modal-body p-0"><div class="p-3 border-bottom" style="border-color: var(--border-color) !important;"><input type="text" id="cmdInput" class="form-control form-control-lg border-0 shadow-none" placeholder="{{ t('search_or_cmd') }}" autocomplete="off"></div><div id="cmdResults" class="p-2" style="max-height: 400px; overflow-y: auto;"></div><div class="p-2 border-top text-muted small text-center" style="border-color: var(--border-color) !important;">Enter — copy login · Ctrl+Enter — copy password</div></div></div></div></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/dashboard.js"></script>
+{% endblock %}

@@ -1,0 +1,80 @@
+.sec-tab { animation: secFade .18s ease-in; }
+@keyframes secFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.stat-tile {
+    padding: 18px;
+    border-left: 3px solid var(--brand);
+}
+.stat-tile.danger { border-left-color: #ef4444; }
+.stat-tile.success { border-left-color: #22c55e; }
+.stat-num { font-size: 1.65rem; font-weight: 800; line-height: 1.1; }
+.stat-label { color: var(--text-muted, #64748b); font-size: .82rem; margin-top: 4px; }
+
+.admin-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.admin-nav::-webkit-scrollbar { display: none; }
+.admin-nav-item {
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    background: var(--bg-base, transparent);
+    color: var(--text-muted, #64748b);
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--motion-fast, .2s) var(--ease-out, ease),
+                background-color var(--motion-fast, .2s) var(--ease-out, ease),
+                border-color var(--motion-fast, .2s) var(--ease-out, ease),
+                color var(--motion-fast, .2s) var(--ease-out, ease);
+}
+.admin-nav-item:hover { color: var(--brand); background: var(--hover-bg, rgba(99,102,241,.08)); }
+.admin-nav-item.active {
+    background: var(--brand-light);
+    color: var(--brand);
+    border-color: rgba(var(--brand-rgb), .2);
+}
+
+.notification-list { display: grid; gap: 10px; max-height: 520px; overflow-y: auto; }
+.notification-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(148,163,184,.25));
+    border-radius: 12px;
+    background: var(--bg-solid, rgba(255,255,255,.45));
+}
+.notification-item.unread { border-left: 3px solid var(--brand); }
+.notification-item .notif-icon { font-size: 1.2rem; }
+.notification-item .notif-title { font-weight: 700; font-size: .92rem; }
+.notification-item .notif-message { color: var(--text-muted, #64748b); font-size: .85rem; }
+.notification-item .notif-time { color: var(--text-muted, #94a3b8); font-size: .75rem; white-space: nowrap; }
+
+/* Достаточный контраст и в светлой, и в тёмной теме (WCAG AA). */
+:root {
+    --sev-high: #b91c1c;
+    --sev-medium: #a16207;
+    --sev-low: #475569;
+}
+[data-bs-theme="dark"] {
+    --sev-high: #fca5a5;
+    --sev-medium: #fcd34d;
+    --sev-low: #cbd5e1;
+}
+.severity-high { color: var(--sev-high); font-weight: 700; }
+.severity-medium { color: var(--sev-medium); font-weight: 700; }
+.severity-low { color: var(--sev-low); font-weight: 600; }
+.issue-tag { font-size: .8rem; }
+
+#new-token-value { word-break: break-all; font-size: .85rem; }
+
+@media (max-width: 767px) {
+    .admin-nav-item { padding: 8px 12px; }
+}

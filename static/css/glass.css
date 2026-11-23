@@ -1,0 +1,161 @@
+/* =========================================
+   LIQUID GLASS THEME (macOS / iOS style)
+   ========================================= */
+
+[data-theme-glass="true"] body {
+    background-color: transparent !important;
+    background-image:
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.1), transparent 40%) !important;
+    background-attachment: fixed !important;
+}
+
+/* Сайдбар (делаем сильное размытие) */
+[data-theme-glass="true"] .sidebar {
+    background: rgba(var(--bg-base-rgb), 0.35) !important;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-bs-theme="light"][data-theme-glass="true"] .sidebar {
+    background: rgba(255, 255, 255, 0.35) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.05);
+}
+
+/* ✅ На мобильных сайдбар должен быть плотным, иначе просвечивает контент */
+@media (max-width: 991px) {
+    [data-theme-glass="true"] .sidebar {
+        background: rgba(var(--bg-base-rgb), 0.92) !important;
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+    }
+    [data-bs-theme="light"][data-theme-glass="true"] .sidebar {
+        background: rgba(255, 255, 255, 0.92) !important;
+    }
+}
+
+/* Карточки, панели, модалки и выпадающие списки */
+[data-theme-glass="true"] .glass-card,
+[data-theme-glass="true"] .glass-panel,
+[data-theme-glass="true"] .vault-item,
+[data-theme-glass="true"] .stat-card,
+[data-theme-glass="true"] .modal-content,
+[data-theme-glass="true"] .login-card,
+[data-theme-glass="true"] .dropdown-menu,
+[data-theme-glass="true"] .custom-select-btn,
+[data-theme-glass="true"] .theme-switch-wrapper,
+[data-theme-glass="true"] .branding-preview,
+[data-theme-glass="true"] .user-card,
+[data-theme-glass="true"] .vault-card {
+    background: rgba(var(--bg-base-rgb), 0.45) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-bs-theme="light"][data-theme-glass="true"] .glass-card,
+[data-bs-theme="light"][data-theme-glass="true"] .glass-panel,
+[data-bs-theme="light"][data-theme-glass="true"] .vault-item,
+[data-bs-theme="light"][data-theme-glass="true"] .stat-card,
+[data-bs-theme="light"][data-theme-glass="true"] .modal-content,
+[data-bs-theme="light"][data-theme-glass="true"] .login-card,
+[data-bs-theme="light"][data-theme-glass="true"] .dropdown-menu,
+[data-bs-theme="light"][data-theme-glass="true"] .custom-select-btn,
+[data-bs-theme="light"][data-theme-glass="true"] .theme-switch-wrapper,
+[data-bs-theme="light"][data-theme-glass="true"] .branding-preview,
+[data-bs-theme="light"][data-theme-glass="true"] .user-card,
+[data-bs-theme="light"][data-theme-glass="true"] .vault-card {
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07) !important;
+}
+
+/* Поля ввода (чуть менее прозрачные) */
+[data-theme-glass="true"] .form-control,
+[data-theme-glass="true"] .form-select {
+    background: rgba(var(--bg-base-rgb), 0.5) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="light"][data-theme-glass="true"] .form-control,
+[data-bs-theme="light"][data-theme-glass="true"] .form-select {
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* При фокусе сохраняем прозрачность, а не непрозрачный Bootstrap-фон */
+[data-theme-glass="true"] .form-control:focus,
+[data-theme-glass="true"] .form-select:focus {
+    background: rgba(var(--bg-base-rgb), 0.65) !important;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-light);
+}
+
+[data-bs-theme="light"][data-theme-glass="true"] .form-control:focus,
+[data-bs-theme="light"][data-theme-glass="true"] .form-select:focus {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-light);
+}
+
+/* Кнопки в сайдбаре */
+[data-theme-glass="true"] .nav-item-custom {
+    color: var(--text-main);
+}
+[data-theme-glass="true"] .nav-item-custom:hover {
+    background: rgba(var(--brand-rgb), 0.1);
+}
+[data-bs-theme="light"][data-theme-glass="true"] .nav-item-custom:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* ✅ Категории в сайдбаре не должны сливаться с фоном */
+[data-theme-glass="true"] .cat-pill {
+    background: rgba(var(--bg-base-rgb), 0.6) !important;
+}
+[data-theme-glass="true"] .cat-pill.active {
+    background: var(--brand-light) !important;
+    color: var(--brand) !important;
+}
+[data-bs-theme="light"][data-theme-glass="true"] .cat-pill {
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* fallback для браузеров без backdrop-filter */
+@supports not (backdrop-filter: blur(1px)) {
+    [data-theme-glass="true"] .sidebar,
+    [data-theme-glass="true"] .glass-card,
+    [data-theme-glass="true"] .glass-panel,
+    [data-theme-glass="true"] .vault-item,
+    [data-theme-glass="true"] .stat-card,
+    [data-theme-glass="true"] .modal-content,
+    [data-theme-glass="true"] .login-card,
+    [data-theme-glass="true"] .dropdown-menu,
+    [data-theme-glass="true"] .custom-select-btn,
+    [data-theme-glass="true"] .theme-switch-wrapper,
+    [data-theme-glass="true"] .branding-preview,
+    [data-theme-glass="true"] .user-card,
+    [data-theme-glass="true"] .vault-card {
+        background: var(--bg-solid) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    [data-theme-glass="true"] .form-control,
+    [data-theme-glass="true"] .form-select,
+    [data-theme-glass="true"] .form-control:focus,
+    [data-theme-glass="true"] .form-select:focus {
+        background: var(--bg-solid) !important;
+        backdrop-filter: none !important;
+    }
+}
+
+/* Плавные переходы */
+.sidebar, .glass-card, .glass-panel, .vault-item, .modal-content, .form-control, .form-select {
+    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}

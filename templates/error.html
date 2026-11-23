@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t('error') }} — {{ theme.company }}{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+  <div class="row justify-content-center w-100">
+    <div class="col-md-6 col-lg-5 text-center">
+
+      {% if error_code == 404 %}
+      <div class="d-inline-flex align-items-center justify-content-center bg-warning text-dark rounded-circle mb-4 shadow" style="width: 80px; height: 80px;">
+        <i class="bi bi-question-circle-fill fs-1"></i>
+      </div>
+      <h2 class="fw-bold mb-3">{{ t('error_404_title') }}</h2>
+      <p class="text-muted mb-4 fs-5">{{ error }}</p>
+
+      {% elif error_code == 403 %}
+      <div class="d-inline-flex align-items-center justify-content-center bg-danger text-white rounded-circle mb-4 shadow" style="width: 80px; height: 80px;">
+        <i class="bi bi-shield-lock-fill fs-1"></i>
+      </div>
+      <h2 class="fw-bold mb-3">{{ t('error_403_title') }}</h2>
+      <p class="text-muted mb-4 fs-5">{{ error }}</p>
+
+      {% elif error_code == 400 %}
+      <div class="d-inline-flex align-items-center justify-content-center bg-warning text-dark rounded-circle mb-4 shadow" style="width: 80px; height: 80px;">
+        <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+      </div>
+      <h2 class="fw-bold mb-3">{{ t('error_400_title') }}</h2>
+      <p class="text-muted mb-4 fs-5">{{ error }}</p>
+
+      {% else %}
+      <div class="d-inline-flex align-items-center justify-content-center bg-danger text-white rounded-circle mb-4 shadow" style="width: 80px; height: 80px;">
+        <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+      </div>
+      <h2 class="fw-bold mb-3">{{ t('error_general_title') }}</h2>
+      <p class="text-muted mb-4 fs-5">{{ error }}</p>
+      {% endif %}
+
+      <div class="card border-0 shadow-sm p-4 mb-4">
+        <p class="mb-0 text-muted">
+          {% if error_code == 404 %}
+          {{ t('error_404_desc') }}
+          {% elif error_code == 403 %}
+          {{ t('error_403_desc') }}
+          {% else %}
+          {{ t('error_general_desc') }}
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-center">
+        <a href="/dashboard" class="btn btn-primary px-4">
+          <i class="bi bi-house-door me-1"></i> {{ t('to_home') }}
+        </a>
+        <a href="/login" class="btn btn-outline-secondary px-4">
+          <i class="bi bi-box-arrow-in-right me-1"></i> {{ t('sign_in') }}
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

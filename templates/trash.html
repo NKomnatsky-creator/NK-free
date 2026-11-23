@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ t('trash') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <main class="main-content w-100 fade-in-up">
+
+        <div class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none shadow-sm p-2" onclick="history.back()" aria-label="{{ t('back') }}" title="{{ t('back') }}" style="width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-arrow-left fs-4"></i>
+                </button>
+                <div>
+                    <h2 class="mb-0 fw-bold" style="letter-spacing: -1px;">
+                        <i class="bi bi-trash3 me-2 text-danger"></i> {{ t('trash') }}
+                    </h2>
+                    <div class="text-muted small mt-1">{{ t('trash_desc') }}</div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger rounded-pill" onclick="openPurgeAllConfirm()" id="purge-all-btn" style="display:none;">
+                    <i class="bi bi-x-circle me-1"></i> {{ t('clear_all') }}
+                </button>
+                <a href="/dashboard" class="btn btn-outline-secondary rounded-pill">
+                    <i class="bi bi-arrow-left me-1"></i> {{ t('back') }}
+                </a>
+            </div>
+        </div>
+
+        <div id="trash-list" class="d-flex flex-column gap-3"></div>
+
+        <div id="trash-empty" class="empty-state glass-panel" style="display:none;">
+            <span class="empty-state__icon" aria-hidden="true"><i class="bi bi-trash3"></i></span>
+            <h4 class="empty-state__title">{{ t('trash_empty') }}</h4>
+            <p class="empty-state__text">{{ t('trash_desc') }}</p>
+            <a href="/dashboard" class="btn btn-primary rounded-pill px-4 mt-2">{{ t('back_to_dashboard') }}</a>
+        </div>
+
+    </main>
+</div>
+
+<!-- ✅ КРАСИВАЯ МОДАЛКА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ -->
+<div class="modal fade" id="purgeConfirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg text-center pwd-modal-content">
+      <div class="modal-body p-4">
+        <div class="display-4 text-danger mb-3"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <h4 class="fw-bold mb-2">{{ t('confirm_purge') }}</h4>
+        <p class="text-muted mb-4" id="purgeConfirmText">{{ t('purge_irreversible') }}</p>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light flex-grow-1 rounded-pill" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+            <button type="button" class="btn btn-danger flex-grow-1 rounded-pill" id="confirmPurgeBtn">{{ t('delete') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/trash.js"></script>
+{% endblock %}

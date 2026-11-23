@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    # Для продакшена за nginx удалите этот port и оставьте доступ только через прокси.
+    ports:
+      - "8000:8000"
+    environment:
+      DATA_DIR: /data
+      USE_WAITRESS: "1"
+      FLASK_SECRET: ${FLASK_SECRET:-}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-}
+      # Нужен только если включён мастер-пароль (python master.py enable).
+      MASTER_PASSWORD: ${MASTER_PASSWORD:-}
+      # Задавайте, когда app.py подключается к бэкенду из другого контейнера.
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-}
+      # Прямой доступ к контейнеру: HTTPS=0. За nginx включите HTTPS=1 и
+      # TRUSTED_PROXY_COUNT=1 — TLS в этом случае заканчивается на прокси.
+      HTTPS: ${HTTPS:-0}
+      TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-0}
+      # Однократная активация при первом запуске Enterprise (см. enterprise_bootstrap.py).
+    volumes:
+      # То же имя тома, что и в команде docker run free-версии: обновление
+      # до Enterprise — это замена контейнера без копирования данных.
+      - nk-data:/data
+    init: true
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket,urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/login', timeout=3).read(); s=socket.create_connection(('127.0.0.1', 5000), 2); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  nk-data:

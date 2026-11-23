@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ t('logs') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/logs.css">
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="p-4 d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; overflow: hidden;">
+                {% if theme.logo_url %}
+                <img src="{{ theme.logo_url }}" alt="" style="width:100%;height:100%;object-fit:contain;">
+                {% elif theme.logo_text %}
+                <span class="fw-bold" style="font-size:0.85rem;">{{ theme.logo_text }}</span>
+                {% else %}
+                <i class="bi bi-shield-lock-fill fs-5"></i>
+                {% endif %}
+            </div>
+            <span class="fs-4 fw-bold" style="letter-spacing: -1px;">{{ theme.company }}</span>
+        </div>
+
+        <div class="px-4 mb-3">
+            <a href="/dashboard" class="btn btn-light w-100 py-2 fw-bold" style="border-radius: 12px;">
+                <i class="bi bi-arrow-left me-1"></i> {{ t('back') }}
+            </a>
+        </div>
+
+        <div class="px-4 text-muted fw-bold mb-2 mt-2" style="font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;">{{ t('management') }}</div>
+        <div class="px-2 flex-grow-1">
+            <a href="/admin" class="nav-item-custom"><i class="bi bi-people-fill"></i> {{ t('users') }}</a>
+            <a href="/logs" class="nav-item-custom active"><i class="bi bi-list-ul"></i> {{ t('logs') }}</a>
+            <a href="/security" class="nav-item-custom"><i class="bi bi-shield-check"></i> {{ t('security_center') }}</a>
+        </div>
+
+        <div class="p-3 border-top" style="border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-4" style="background: var(--bg-base);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: var(--brand-light); color: var(--brand);">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.9rem;">{{ user.username }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ t('role_admin') }}</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn" onclick="toggleTheme()" aria-label="{{ t('theme') }}" title="{{ t('theme') }}"><i class="bi bi-moon-stars-fill theme-toggle-icon"></i></button>
+                    <a href="/logout" class="action-btn text-danger" aria-label="{{ t('logout') }}" title="{{ t('logout') }}"><i class="bi bi-box-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content w-100 fade-in-up">
+        <div class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none shadow-sm" onclick="toggleSidebar()" aria-label="{{ t('menu') }}" title="{{ t('menu') }}">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <h2 class="mb-0 fw-bold" style="letter-spacing: -1px;">{{ t('logs') }}</h2>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary rounded-pill" onclick="loadLogs()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> {{ t('refresh') }}
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-panel mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">{{ t('user') }}</label>
+                    <select id="logUserFilter" class="form-select form-select-sm"><option value="">{{ t('all_users') }}</option></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">{{ t('action') }}</label>
+                    <input id="logActionFilter" class="form-control form-control-sm" placeholder="{{ t('action') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">IP</label>
+                    <input id="logIpFilter" class="form-control form-control-sm" placeholder="IP">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">{{ t('date_from') }}</label>
+                    <input id="logDateFrom" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">{{ t('date_to') }}</label>
+                    <input id="logDateTo" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <button class="btn btn-primary btn-sm" onclick="loadLogs()"><i class="bi bi-funnel me-1"></i>{{ t('refresh') }}</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="resetLogFilters()">{{ t('reset') }}</button>
+                    <button class="btn btn-outline-success btn-sm ms-auto" onclick="exportLogs()"><i class="bi bi-download me-1"></i>{{ t('export_logs') }}</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="table-responsive">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>{{ t('time') }}</th>
+                            <th>{{ t('user') }}</th>
+                            <th>{{ t('action') }}</th>
+                            <th>{{ t('details') }}</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-list">
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/logs.js"></script>
+{% endblock %}

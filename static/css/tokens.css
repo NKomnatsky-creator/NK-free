@@ -1,0 +1,91 @@
+/* === Дизайн-токены PassVault (2026 Edition) === */
+
+:root {
+    /* Бренд (более глубокий индиго) */
+    --brand: #4f46e5;
+    --brand-contrast: #4338ca;
+    --brand-rgb: 79, 70, 229;
+    --brand-hover: #4338ca;
+    --brand-light: rgba(var(--brand-rgb), 0.12);
+    --brand-2: #7c3aed;
+    --brand-2-rgb: 124, 58, 237;
+
+    /* Радиусы (чуть мягче) */
+    --radius-card: 14px;
+    --radius-modal: 20px;
+    --radius-btn: 10px;
+
+    /* Шрифт */
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Базовые переменные */
+    --bg-base-rgb: 248, 250, 252;
+
+    /* Семантические статусы: цвет + фон + граница.
+       Используются вместо сырых bg-danger/bg-warning в JS и шаблонах. */
+    --status-active-fg: #15803d;
+    --status-active-bg: rgba(34, 197, 94, 0.14);
+    --status-active-border: rgba(34, 197, 94, 0.32);
+    --status-warning-fg: #b45309;
+    --status-warning-bg: rgba(245, 158, 11, 0.16);
+    --status-warning-border: rgba(245, 158, 11, 0.34);
+    --status-danger-fg: #dc2626;
+    --status-danger-bg: rgba(239, 68, 68, 0.13);
+    --status-danger-border: rgba(239, 68, 68, 0.30);
+    --status-info-fg: #4338ca;
+    --status-info-bg: rgba(79, 70, 229, 0.12);
+    --status-info-border: rgba(79, 70, 229, 0.28);
+    --status-muted-fg: #5b6472;
+    --status-muted-bg: rgba(100, 116, 139, 0.12);
+    --status-muted-border: rgba(100, 116, 139, 0.25);
+}
+
+[data-bs-theme="light"] {
+    --bg-base: #f4f5f7; /* Чуть темнее, чтобы карточки выделялись */
+    --bg-solid: #ffffff;
+    --text-main: #111827;
+    --text-muted: #5b6472;
+    --border-color: #e5e7eb;
+    --hover-bg: #f3f4f6;
+
+    /* Более мягкие, рассеянные тени (тренд 2026) */
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.06);
+
+    --bg-base-rgb: 244, 245, 247;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.9);
+}
+
+[data-bs-theme="dark"] {
+    --brand-contrast: #a5b4fc;
+    --bg-base: #0f1115;
+    --bg-solid: #181b21;
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --border-color: #2d333b;
+    --hover-bg: #222730;
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    --bg-base-rgb: 15, 17, 21;
+    --glass-bg: rgba(24, 27, 33, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    --status-active-fg: #86efac;
+    --status-active-bg: rgba(34, 197, 94, 0.16);
+    --status-active-border: rgba(34, 197, 94, 0.36);
+    --status-warning-fg: #fcd34d;
+    --status-warning-bg: rgba(245, 158, 11, 0.16);
+    --status-warning-border: rgba(245, 158, 11, 0.38);
+    --status-danger-fg: #fca5a5;
+    --status-danger-bg: rgba(239, 68, 68, 0.15);
+    --status-danger-border: rgba(239, 68, 68, 0.36);
+    --status-info-fg: #a5b4fc;
+    --status-info-bg: rgba(99, 102, 241, 0.18);
+    --status-info-border: rgba(99, 102, 241, 0.38);
+    --status-muted-fg: #cbd5e1;
+    --status-muted-bg: rgba(148, 163, 184, 0.14);
+    --status-muted-border: rgba(148, 163, 184, 0.28);
+}

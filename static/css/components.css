@@ -1,0 +1,448 @@
+/* === Переиспользуемые компоненты (2026 Edition) === */
+
+.btn {
+    border-radius: var(--radius-btn);
+    font-weight: 500;
+    padding: 9px 18px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: -0.01em;
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--brand-2), var(--brand));
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 4px rgba(var(--brand-rgb), 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(180deg, var(--brand-2), var(--brand-hover));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(var(--brand-rgb), 0.4);
+    color: white;
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-control,
+.form-select {
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-btn);
+    padding: 10px 14px;
+    font-weight: 400;
+    color: var(--text-main);
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: var(--bg-solid);
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+.glass-card {
+    background: var(--bg-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.action-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-main);
+}
+
+.action-btn.text-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Кастомные дропдауны с эффектом стекла */
+.dropdown-menu-custom, .dropdown-menu {
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    padding: 6px;
+    margin-top: 8px !important;
+    animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1060 !important;
+    position: absolute;
+    will-change: transform, opacity;
+}
+
+@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dropdown-item-custom, .dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: var(--text-main);
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background 0.15s, color 0.15s;
+    cursor: pointer;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    text-align: left;
+}
+
+.dropdown-item-custom:hover, .dropdown-menu .dropdown-item:hover {
+    background: var(--brand-light);
+    color: var(--brand);
+}
+
+/* Модалки (стекло) */
+.modal-content {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15) !important;
+    border-radius: var(--radius-modal) !important;
+}
+
+.modal-backdrop.show {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 1 !important;
+}
+
+/* Анимация появления модалки */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* === СТИЛИ ДЛЯ МОДАЛКИ СМЕНЫ ПАРОЛЯ (2026) === */
+
+.pwd-modal-content {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2) !important;
+    border-radius: var(--radius-modal) !important;
+}
+
+/* Контейнер инпута (без flex, чтобы инпут занимал всю ширину) */
+.pwd-input-group {
+    position: relative;
+    display: block;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.pwd-input-group:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-light);
+    background: var(--bg-solid);
+}
+
+/* Иконка слева (замок, ключ, галочка) */
+.pwd-input-group > i.bi {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+}
+
+/* Сам инпут */
+.pwd-input-group .form-control {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 44px 0 42px !important;
+    height: 48px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--text-main);
+}
+
+/* Кнопка "глаз" (фиксированный размер, чтобы не наезжала) */
+.pwd-input-group .btn-toggle-pwd {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    transition: color 0.2s, background 0.2s;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: none !important;
+}
+
+/* Иконка внутри кнопки "глаз" */
+.pwd-input-group .btn-toggle-pwd i.bi {
+    position: static;
+    transform: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: inherit;
+    width: auto;
+    height: auto;
+    left: auto;
+    top: auto;
+}
+
+.pwd-input-group .btn-toggle-pwd:hover {
+    color: var(--brand);
+    background: var(--hover-bg);
+}
+
+/* Состояния для галочки (совпадение паролей) */
+.pwd-input-group.match-ok > i.bi {
+    color: #10b981;
+}
+.pwd-input-group.match-ok {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.pwd-input-group.match-error > i.bi {
+    color: #ef4444;
+}
+.pwd-input-group.match-error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Полоса надежности */
+.pwd-strength-track {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.pwd-strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 10px;
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+}
+
+/* Округлые кнопки */
+.btn.rounded-pill {
+    padding-left: 24px;
+    padding-right: 24px;
+    font-weight: 600;
+}
+
+/* === АНИМАЦИЯ ТРЯСКИ === */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.pwd-input-group.shake {
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* === ПРЕДУПРЕЖДЕНИЕ О CAPS LOCK === */
+.caps-lock-warning {
+    position: absolute;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #f59e0b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+    z-index: 3;
+    background: var(--bg-base);
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.caps-lock-warning.show {
+    display: flex;
+}
+
+/* === Семантические статусные чипы ===================================== */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.status-chip--active {
+    color: var(--status-active-fg);
+    background: var(--status-active-bg);
+    border-color: var(--status-active-border);
+}
+
+.status-chip--warning {
+    color: var(--status-warning-fg);
+    background: var(--status-warning-bg);
+    border-color: var(--status-warning-border);
+}
+
+.status-chip--danger {
+    color: var(--status-danger-fg);
+    background: var(--status-danger-bg);
+    border-color: var(--status-danger-border);
+}
+
+.status-chip--info {
+    color: var(--status-info-fg);
+    background: var(--status-info-bg);
+    border-color: var(--status-info-border);
+}
+
+.status-chip--muted {
+    color: var(--status-muted-fg);
+    background: var(--status-muted-bg);
+    border-color: var(--status-muted-border);
+}
+
+/* === Пустые состояния ================================================ */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    font-size: 1.6rem;
+}
+
+.empty-state__title {
+    color: var(--text-main);
+    font-weight: 700;
+    margin: 0;
+}
+
+.empty-state__text {
+    max-width: 34rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.empty-state--compact {
+    padding: 1.5rem 1rem;
+}
+
+.empty-state--compact .empty-state__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+}
+
+/* === Пагинация таблиц ================================================= */
+.table-pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.table-pager button {
+    border: 1px solid var(--border-color);
+    background: var(--bg-solid);
+    color: var(--text-main);
+    border-radius: var(--radius-btn);
+    padding: 0.25rem 0.65rem;
+    font-weight: 600;
+}
+
+.table-pager button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* === Фокус в модальных окнах ========================================= */
+.modal :focus-visible,
+.table-pager button:focus-visible,
+.table-responsive th[data-sort]:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}

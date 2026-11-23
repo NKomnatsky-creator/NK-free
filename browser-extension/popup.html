@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>NK Secure</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <strong>NK Secure</strong>
+    <span class="dot" id="statusDot" title="Состояние подключения"></span>
+  </header>
+
+  <section class="settings">
+    <label>Адрес сервера
+      <input id="serverUrl" type="url" placeholder="http://localhost:8000" spellcheck="false">
+    </label>
+    <label>API-токен
+      <input id="apiToken" type="password" placeholder="pt_..." spellcheck="false" autocomplete="off">
+    </label>
+    <div class="row">
+      <button id="saveBtn" type="button" class="secondary">Сохранить</button>
+      <button id="refreshBtn" type="button">Обновить список</button>
+    </div>
+  </section>
+
+  <section class="list">
+    <input id="search" type="search" placeholder="Поиск по сервису..." aria-label="Поиск">
+    <div id="entries"></div>
+  </section>
+
+  <footer id="message" aria-live="polite"></footer>
+  <script src="popup.js"></script>
+</body>
+</html>

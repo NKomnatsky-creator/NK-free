@@ -1,0 +1,27 @@
+/* === Toast-уведомления === */
+
+.toast-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-left: 10px;
+    transition: background 0.2s;
+}
+
+.toast-action-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.toast-container .toast {
+    border-radius: var(--radius-card);
+}
+
+/* Семантические тоны вместо сырых bg-danger / bg-warning. */
+.toast--success { background: var(--status-active-fg) !important; color: #fff !important; }
+.toast--warning { background: var(--status-warning-fg) !important; color: #fff !important; }
+.toast--danger  { background: var(--status-danger-fg) !important; color: #fff !important; }
+.toast--info    { background: var(--status-info-fg) !important; color: #fff !important; }

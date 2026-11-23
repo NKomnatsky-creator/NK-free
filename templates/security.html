@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}{{ t('security_center') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/security.css">
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="p-4 d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; overflow: hidden; flex-shrink: 0;">
+                {% if theme.logo_url %}
+                <img src="{{ theme.logo_url }}" alt="" style="width:100%;height:100%;object-fit:contain;">
+                {% elif theme.logo_text %}
+                <span class="fw-bold" style="font-size:0.85rem;">{{ theme.logo_text }}</span>
+                {% else %}
+                <i class="bi bi-shield-lock-fill fs-5"></i>
+                {% endif %}
+            </div>
+            <span class="fs-4 fw-bold" style="letter-spacing:-1px;">{{ theme.company }}</span>
+            <button class="btn btn-light d-lg-none ms-auto p-2" onclick="closeSidebar()" aria-label="{{ t('close') }}" title="{{ t('close') }}" style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-4 mb-3">
+            <a href="/dashboard" class="btn btn-light w-100 py-2 fw-bold" style="border-radius:12px;"><i class="bi bi-arrow-left me-1"></i> {{ t('back') }}</a>
+        </div>
+
+        <div class="px-4 text-muted fw-bold mb-2" style="font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;">{{ t('actions') }}</div>
+        <div class="px-2 mb-3">
+            <a href="/dashboard" class="nav-item-custom"><i class="bi bi-key-fill"></i> {{ t('dashboard') }}</a>
+            <a href="/security" class="nav-item-custom active"><i class="bi bi-shield-check"></i> {{ t('security_center') }}</a>
+            
+        </div>
+
+        {% if user.role in ('admin', 'manager') %}
+        <div class="px-4 text-muted fw-bold mb-2" style="font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;">{{ t('management') }}</div>
+        <div class="px-2 mb-3">
+            <a href="/admin" class="nav-item-custom"><i class="bi bi-sliders2"></i> {{ t('admin_panel') }}</a>
+            <a href="/logs" class="nav-item-custom"><i class="bi bi-list-check"></i> {{ t('logs') }}</a>
+        </div>
+        {% endif %}
+
+        <div class="flex-grow-1"></div>
+
+        <div class="p-3 border-top" style="border-color:var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-4" style="background:var(--bg-base);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:var(--brand-light);color:var(--brand);"><i class="bi bi-person-fill"></i></div>
+                    <div>
+                        <div class="fw-bold" style="font-size:0.9rem;">{{ user.username }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">{{ t('role_' ~ user.role) }}</div>
+                        
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn" onclick="toggleTheme()" aria-label="{{ t('theme') }}"><i class="bi bi-moon-stars-fill theme-toggle-icon"></i></button>
+                    <a href="/logout" class="action-btn text-danger" aria-label="{{ t('logout') }}"><i class="bi bi-box-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content w-100 fade-in-up">
+        <div class="topbar d-flex align-items-center gap-3 mb-4">
+            <button class="btn btn-light d-lg-none shadow-sm p-2" onclick="toggleSidebar()" aria-label="{{ t('menu') }}" title="{{ t('menu') }}" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-list fs-4"></i></button>
+            <div class="me-auto">
+                <h4 class="fw-bold mb-0">{{ t('security_center') }}</h4>
+                <div class="text-muted small">{{ t('security_center_desc') }}</div>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="loadAll()">
+                <i class="bi bi-arrow-clockwise"></i> {{ t('refresh') }}
+            </button>
+        </div>
+
+        <div class="glass-card p-3 p-md-4 mb-4">
+            <div class="admin-nav" role="tablist" aria-label="{{ t('security_center') }}">
+                <button type="button" id="tabbtn-overview" class="admin-nav-item active" role="tab" aria-controls="tab-overview" aria-selected="true" tabindex="0" data-sec-tab="tab-overview" onclick="switchSecurityTab('tab-overview', this)" onkeydown="handleSecurityTabKey(event, this)">
+                    <i class="bi bi-activity me-1"></i> {{ t('overview') }}
+                </button>
+                <button type="button" id="tabbtn-notifications" class="admin-nav-item" role="tab" aria-controls="tab-notifications" aria-selected="false" tabindex="-1" data-sec-tab="tab-notifications" onclick="switchSecurityTab('tab-notifications', this)" onkeydown="handleSecurityTabKey(event, this)">
+                    <i class="bi bi-bell me-1"></i> {{ t('notifications') }}
+                    <span class="badge bg-danger ms-1" id="unreadBadge" style="display:none;">0</span>
+                </button>
+                <button type="button" id="tabbtn-shares" class="admin-nav-item" role="tab" aria-controls="tab-shares" aria-selected="false" tabindex="-1" data-sec-tab="tab-shares" onclick="switchSecurityTab('tab-shares', this)" onkeydown="handleSecurityTabKey(event, this)">
+                    <i class="bi bi-link-45deg me-1"></i> {{ t('shared_links') }}
+                </button>
+                <button type="button" id="tabbtn-2fa" class="admin-nav-item" role="tab" aria-controls="tab-2fa" aria-selected="false" tabindex="-1" data-sec-tab="tab-2fa" onclick="switchSecurityTab('tab-2fa', this)" onkeydown="handleSecurityTabKey(event, this)">
+                    <i class="bi bi-shield-lock me-1"></i> 2FA
+                </button>
+                <button type="button" id="tabbtn-tokens" class="admin-nav-item" role="tab" aria-controls="tab-tokens" aria-selected="false" tabindex="-1" data-sec-tab="tab-tokens" onclick="switchSecurityTab('tab-tokens', this)" onkeydown="handleSecurityTabKey(event, this)">
+                    <i class="bi bi-code-slash me-1"></i> {{ t('api_tokens') }}
+                </button>
+            </div>
+        </div>
+
+        <div id="sec-error" class="alert alert-danger border-0 d-none" style="border-radius:12px;"></div>
+
+        <section id="tab-overview" class="sec-tab" role="tabpanel" aria-labelledby="tabbtn-overview" tabindex="0">
+            <div class="row g-3 mb-4" id="security-summary">
+                <div class="col-6 col-md-3"><div class="glass-card stat-tile"><div class="stat-num" id="sec-total">—</div><div class="stat-label">{{ t('passwords') }}</div></div></div>
+                <div class="col-6 col-md-3"><div class="glass-card stat-tile danger"><div class="stat-num" id="sec-issues">—</div><div class="stat-label">{{ t('issues') }}</div></div></div>
+                <div class="col-6 col-md-3"><div class="glass-card stat-tile success"><div class="stat-num" id="sec-healthy">—</div><div class="stat-label">{{ t('healthy') }}</div></div></div>
+                <div class="col-6 col-md-3"><div class="glass-card stat-tile"><div class="stat-num" id="sec-leaked">—</div><div class="stat-label">{{ t('leaks') }}</div></div></div>
+            </div>
+            <div class="glass-card p-3 p-md-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0">{{ t('security_issues') }}</h6>
+                    <span class="text-muted small" id="security-updated"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>{{ t('service') }}</th><th>{{ t('issue') }}</th><th>{{ t('severity') }}</th><th></th></tr></thead>
+                        <tbody id="security-issues"><tr><td colspan="4" class="text-center text-muted py-4">{{ t('loading') }}</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-notifications" class="sec-tab" role="tabpanel" aria-labelledby="tabbtn-notifications" tabindex="0" style="display:none;">
+            <div class="glass-card p-3 p-md-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0">{{ t('notifications') }}</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="markAllRead()">{{ t('mark_all_read') }}</button>
+                </div>
+                <div id="notifications-list" class="notification-list">
+                    <div class="text-center text-muted py-4">{{ t('loading') }}</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-shares" class="sec-tab" role="tabpanel" aria-labelledby="tabbtn-shares" tabindex="0" style="display:none;">
+            <div class="glass-card p-3 p-md-4">
+                <h6 class="fw-bold mb-3">{{ t('shared_links') }}</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>{{ t('service') }}</th><th>{{ t('expires') }}</th><th>{{ t('views') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+                        <tbody id="shares-list"><tr><td colspan="5" class="text-center text-muted py-4">{{ t('loading') }}</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-2fa" class="sec-tab" role="tabpanel" aria-labelledby="tabbtn-2fa" tabindex="0" style="display:none;">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <div class="glass-card p-3 p-md-4 h-100">
+                        <h6 class="fw-bold mb-3">{{ t('two_factor') }}</h6>
+                        <div id="totp-status-box" class="mb-3">{{ t('loading') }}</div>
+                        <button class="btn btn-primary btn-sm" onclick="startTotpSetup()">
+                            <i class="bi bi-qr-code me-1"></i> <span id="totp-setup-label">{{ t('setup_2fa') }}</span>
+                        </button>
+                        <div id="totp-setup" class="mt-3 d-none">
+                            <div class="row g-3">
+                                <div class="col-md-4 text-center"><img id="totp-qr" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="QR" class="img-fluid" style="max-width:180px;border-radius:12px;background:#fff;padding:8px;"></div>
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold">{{ t('secret_key') }}</label>
+                                    <input id="totp-secret" class="form-control font-monospace small" readonly onclick="this.select();">
+                                    <div id="totp-current-wrap" class="mt-2 d-none">
+                                        <label class="form-label small fw-bold" for="totp-current-code">{{ t('current_code') }}</label>
+                                        <input id="totp-current-code" class="form-control" inputmode="text" maxlength="40" autocomplete="one-time-code">
+                                    </div>
+                                    <label class="form-label small fw-bold mt-2" for="totp-enable-code">{{ t('totp_code') }}</label>
+                                    <input id="totp-enable-code" class="form-control" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+                                    <button class="btn btn-success btn-sm mt-2" onclick="enableTotp()">{{ t('enable_2fa') }}</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="recovery-codes" class="mt-3 d-none">
+                            <div class="alert alert-warning small">{{ t('recovery_warning') }}</div>
+                            <div id="recovery-codes-list" class="font-monospace small"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="glass-card p-3 p-md-4 h-100">
+                        <h6 class="fw-bold mb-3">{{ t('disable_2fa') }}</h6>
+                        <p class="text-muted small">{{ t('disable_2fa_desc') }}</p>
+                        <label class="visually-hidden" for="totp-disable-code">{{ t('totp_or_recovery') }}</label>
+                        <input id="totp-disable-code" class="form-control mb-2" placeholder="{{ t('totp_or_recovery') }}" maxlength="40" autocomplete="one-time-code">
+                        <button class="btn btn-outline-danger btn-sm" onclick="disableTotp()">{{ t('disable_2fa') }}</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-tokens" class="sec-tab" role="tabpanel" aria-labelledby="tabbtn-tokens" tabindex="0" style="display:none;">
+            <div class="glass-card p-3 p-md-4">
+                <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                    <div>
+                        <label class="form-label small fw-bold">{{ t('token_name') }}</label>
+                        <input id="token-name" class="form-control" value="CLI" maxlength="100">
+                    </div>
+                    <div>
+                        <label class="form-label small fw-bold">{{ t('token_days') }}</label>
+                        <input id="token-days" type="number" min="1" max="365" value="30" class="form-control" style="max-width:110px;">
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="createToken()"><i class="bi bi-plus-lg me-1"></i>{{ t('create_token') }}</button>
+                </div>
+                <div id="new-token-box" class="alert alert-warning d-none small">
+                    <div class="fw-bold mb-1">{{ t('token_once') }}</div>
+                    <code id="new-token-value" class="user-select-all"></code>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>{{ t('token_name') }}</th><th>{{ t('created') }}</th><th>{{ t('last_used') }}</th><th>{{ t('expires') }}</th><th></th></tr></thead>
+                        <tbody id="tokens-list"><tr><td colspan="5" class="text-center text-muted py-4">{{ t('loading') }}</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="modal fade" id="shareAccessModal" tabindex="-1" aria-labelledby="shareAccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title fw-bold" id="shareAccessModalLabel">{{ t('access_log') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+            <div class="modal-body"><div id="share-access-body" class="small">{{ t('loading') }}</div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/security.js"></script>
+{% endblock %}

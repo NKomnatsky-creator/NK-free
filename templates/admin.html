@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin_panel') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/pages/admin.css">
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="p-4 d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; overflow: hidden;">
+                {% if theme.logo_url %}
+                <img src="{{ theme.logo_url }}" alt="" style="width:100%;height:100%;object-fit:contain;">
+                {% elif theme.logo_text %}
+                <span class="fw-bold" style="font-size:0.85rem;">{{ theme.logo_text }}</span>
+                {% else %}
+                <i class="bi bi-shield-lock-fill fs-5"></i>
+                {% endif %}
+            </div>
+            <span class="fs-4 fw-bold">{{ theme.company }}</span>
+        </div>
+        <div class="px-4 mb-3"><a href="/dashboard" class="btn btn-light w-100 py-2 fw-bold" style="border-radius: 12px;"><i class="bi bi-arrow-left me-1"></i> {{ t('back') }}</a></div>
+        <div class="px-4 text-muted fw-bold mb-2 mt-2" style="font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;">{{ t('management') }}</div>
+        <div class="px-2 flex-grow-1">
+            <a href="/admin" class="nav-item-custom active"><i class="bi bi-gear-fill"></i> {{ t('admin_panel') }}</a>
+            <a href="/logs" class="nav-item-custom"><i class="bi bi-list-ul"></i> {{ t('logs') }}</a>
+            <a href="/security" class="nav-item-custom"><i class="bi bi-shield-check"></i> {{ t('security_center') }}</a>
+            
+        </div>
+        <div class="p-3 border-top" style="border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-4" style="background: var(--bg-base);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: var(--brand-light); color: var(--brand);"><i class="bi bi-person-fill"></i></div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.9rem;">{{ user.username }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ license.label }}</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn" onclick="toggleTheme()" aria-label="{{ t('theme') }}" title="{{ t('theme') }}"><i class="bi bi-moon-stars-fill theme-toggle-icon"></i></button>
+                    <a href="/logout" class="action-btn text-danger" aria-label="{{ t('logout') }}" title="{{ t('logout') }}"><i class="bi bi-box-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content w-100">
+        <div class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none shadow-sm" onclick="toggleSidebar()" aria-label="{{ t('menu') }}" title="{{ t('menu') }}"><i class="bi bi-list fs-4"></i></button>
+                <h2 class="mb-0 fw-bold">{{ t('command_center') }}</h2>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary" id="glassToggleBtn" onclick="toggleGlassMode()">
+                    <i class="bi bi-droplet-half"></i> <span>Liquid Glass</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-nav" role="navigation" aria-label="{{ t('admin_panel') }}">
+            <button type="button" class="admin-nav-item" data-tab="tab-users" onclick="switchTab('tab-users', this)" title="{{ t('users') }}"><i class="bi bi-people-fill me-1"></i> {{ t('users') }}</button>
+            <button type="button" class="admin-nav-item" data-tab="tab-passwords" onclick="switchTab('tab-passwords', this)" title="{{ t('passwords') }}"><i class="bi bi-key-fill me-1"></i> {{ t('passwords') }}</button>
+            <button type="button" class="admin-nav-item" data-tab="tab-vaults" onclick="switchTab('tab-vaults', this)" title="{{ t('vaults') }}"><i class="bi bi-folder-symlink-fill me-1"></i> {{ t('vaults') }}</button>
+            <button type="button" class="admin-nav-item" data-tab="tab-security" onclick="switchTab('tab-security', this)" title="{{ t('security') }}"><i class="bi bi-shield-lock-fill me-1"></i> {{ t('security') }}</button>
+            <button type="button" class="admin-nav-item" data-tab="tab-backups" onclick="switchTab('tab-backups', this)" title="{{ t('backups') }}"><i class="bi bi-archive me-1"></i> {{ t('backups') }}</button>
+            <button type="button" class="admin-nav-item" data-tab="tab-settings" onclick="switchTab('tab-settings', this)" title="{{ t('settings') }}"><i class="bi bi-sliders me-1"></i> {{ t('settings') }}</button>
+            {% if license.has_branding %}
+            <button type="button" class="admin-nav-item" data-tab="tab-branding" onclick="switchTab('tab-branding', this)" title="{{ t('branding') }}"><i class="bi bi-palette-fill me-1"></i> {{ t('branding') }}</button>
+            {% endif %}
+        </div>
+
+        <div class="row g-4 mb-4" id="stats-row">
+            <div class="col-6 col-md-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--brand);"><i class="bi bi-people-fill"></i></div><div class="stat-content"><div class="fs-3 fw-bold" id="stat-users">0</div><small class="text-muted fw-bold text-uppercase" style="font-size:0.65rem;">{{ t('users') }}</small></div></div></div>
+            <div class="col-6 col-md-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background: rgba(34, 197, 94, 0.15); color: #22c55e;"><i class="bi bi-key-fill"></i></div><div class="stat-content"><div class="fs-3 fw-bold" id="stat-passwords">0</div><small class="text-muted fw-bold text-uppercase" style="font-size:0.65rem;">{{ t('passwords') }}</small></div></div></div>
+            <div class="col-6 col-md-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="bi bi-shield-x"></i></div><div class="stat-content"><div class="fs-3 fw-bold" id="stat-leaks">0</div><small class="text-muted fw-bold text-uppercase" style="font-size:0.65rem;">{{ t('leaks') }}</small></div></div></div>
+            <div class="col-6 col-md-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;"><i class="bi bi-hdd-fill"></i></div><div class="stat-content"><div class="fs-3 fw-bold" id="stat-db">0 KB</div><small class="text-muted fw-bold text-uppercase" style="font-size:0.65rem;">{{ t('db_size') }}</small></div></div></div>
+        </div>
+
+        <div id="tab-users" class="tab-content">
+            <div class="glass-panel p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between mb-4 gap-3">
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <input type="text" id="userSearch" class="form-control" placeholder="{{ t('search_users') }}" oninput="filterUsers()" style="min-width: 200px;">
+                        <select id="userRoleFilter" class="form-select" onchange="filterUsers()" aria-label="{{ t('role') }}">
+                            <option value="">{{ t('all_roles') }}</option>
+                            <option value="admin">{{ t('role_admin') }}</option>
+                            <option value="manager">{{ t('role_manager') }}</option>
+                            <option value="user">{{ t('role_user') }}</option>
+                        </select>
+                    </div>
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <button class="btn btn-outline-secondary" onclick="openImportUsersModal()"><i class="bi bi-upload me-1"></i> {{ t('import') }}</button>
+                        <button class="btn btn-primary" onclick="openUserModal()"><i class="bi bi-plus-lg me-1"></i> {{ t('add_user') }}</button>
+                    </div>
+                </div>
+                <div id="users-loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+                <div id="users-list" class="d-flex flex-column gap-3"></div>
+            </div>
+        </div>
+
+        <div id="tab-passwords" class="tab-content">
+            <div class="glass-panel p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between mb-4 gap-3">
+                    <div class="d-flex flex-column flex-md-row gap-2 w-100">
+                        <input type="text" id="pwdSearch" class="form-control" placeholder="{{ t('search_services') }}">
+                        <select id="pwdFilter" class="form-select" onchange="loadAdminPasswords()" style="width: 200px;">
+                            <option value="all">{{ t('all_passwords') }}</option>
+                            <option value="leaks">{{ t('leaks_only') }}</option>
+                            <option value="old">{{ t('old_only') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th data-sort="service_name" tabindex="0">{{ t('service') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="created_by_name" tabindex="0">{{ t('owner') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="username" tabindex="0">{{ t('login') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="category" tabindex="0">{{ t('category') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="last_modified_at" tabindex="0">{{ t('updated') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th>{{ t('actions') }}</th></tr></thead>
+                        <tbody id="admin-pwd-list"></tbody>
+                    </table>
+                </div>
+                <div class="table-pager" id="admin-pwd-pager"></div>
+            </div>
+        </div>
+
+        <div id="tab-vaults" class="tab-content">
+            <div class="glass-panel p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-column flex-md-row gap-3">
+                    <h5 class="mb-0 fw-bold">{{ t('vaults') }}</h5>
+                    <button class="btn btn-primary w-100 w-md-auto" onclick="openCreateVaultModal()"><i class="bi bi-folder-plus me-1"></i> {{ t('create_folder') }}</button>
+                </div>
+                <div id="vaults-list" class="row g-3"></div>
+            </div>
+        </div>
+
+        <div id="tab-security" class="tab-content">
+            <div class="glass-panel p-3 p-md-4">
+                <h5 class="fw-bold mb-4">{{ t('banned_ips') }}</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th data-sort="ip" tabindex="0">IP <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="attempts" tabindex="0">{{ t('attempts') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="banned_until" tabindex="0">{{ t('banned_until') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th>{{ t('actions') }}</th></tr></thead>
+                        <tbody id="bans-list"></tbody>
+                    </table>
+                </div>
+                <div class="table-pager" id="bans-pager"></div>
+            </div>
+        </div>
+
+        <div id="tab-backups" class="tab-content">
+            <div class="glass-panel p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h3 class="fw-bold mb-1">{{ t('backups') }}</h3>
+                        <div class="text-muted small">{{ t('backup_warning') }}</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createBackup()"><i class="bi bi-plus-lg me-1"></i> {{ t('create_backup') }}</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th data-sort="name" tabindex="0">{{ t('backup') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th data-sort="created_at" tabindex="0">{{ t('created') }} <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th><th>{{ t('actions') }}</th></tr></thead>
+                        <tbody id="backups-list"><tr><td colspan="3" class="text-center text-muted py-4">{{ t('loading') }}</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="table-pager" id="backups-pager"></div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="glass-panel p-3 p-md-4" style="max-width: 600px;">
+                <h5 class="fw-bold mb-4">{{ t('security_policies') }}</h5>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted" for="setMinLen">{{ t('min_pwd_length') }}</label>
+                    <input type="number" id="setMinLen" class="form-control" min="4" max="128">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted" for="setMaxAge">{{ t('max_pwd_age') }}</label>
+                    <input type="number" id="setMaxAge" class="form-control" min="30" max="365">
+                    <div class="form-text small">{{ t('max_pwd_age_desc') }}</div>
+                </div>
+                <button class="btn btn-primary w-100 w-md-auto" onclick="saveSettings()">{{ t('save') }}</button>
+            </div>
+        </div>
+
+        {% if license.has_branding %}
+        <div id="tab-branding" class="tab-content">
+            <div class="row g-4">
+                <div class="col-12 col-lg-6">
+                    <div class="glass-panel p-3 p-md-4">
+                        <h5 class="fw-bold mb-4">{{ t('branding_settings') }}</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted" for="brand_company_name">{{ t('company_name') }}</label>
+                            <input type="text" id="brand_company_name" class="form-control" maxlength="64" placeholder="PassVault">
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center" for="brand_brand_color">
+                                    {{ t('main_color') }}
+                                    <span class="color-preview" id="preview_brand_color"></span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="color" id="brand_brand_color" class="form-control form-control-color" oninput="updateLivePreview()">
+                                    <input type="text" id="brand_brand_color_hex" class="form-control font-monospace" maxlength="7" placeholder="#6366f1" oninput="syncHex('brand_color')">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center" for="brand_brand_color_2">
+                                    {{ t('secondary_color') }}
+                                    <span class="color-preview" id="preview_brand_color_2"></span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="color" id="brand_brand_color_2" class="form-control form-control-color" oninput="updateLivePreview()">
+                                    <input type="text" id="brand_brand_color_2_hex" class="form-control font-monospace" maxlength="7" placeholder="#8b5cf6" oninput="syncHex('brand_color_2')">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted" for="brand_radius_card">{{ t('radius_card') }}</label>
+                                <input type="number" id="brand_radius_card" class="form-control" min="4" max="48" oninput="updateLivePreview()">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted" for="brand_radius_modal">{{ t('radius_modal') }}</label>
+                                <input type="number" id="brand_radius_modal" class="form-control" min="4" max="48" oninput="updateLivePreview()">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted" for="brand_font_family">{{ t('font') }}</label>
+                                <select id="brand_font_family" class="form-select" onchange="updateLivePreview()">
+                                    <option value="Outfit">Outfit (default)</option>
+                                    <option value="Inter">Inter</option>
+                                    <option value="Roboto">Roboto</option>
+                                    <option value="system-ui">System</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted" for="brand_theme_default">{{ t('default_theme') }}</label>
+                                <select id="brand_theme_default" class="form-select">
+                                    <option value="system">System</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted" for="brand_logo_text">{{ t('logo_text') }}</label>
+                            <input type="text" id="brand_logo_text" class="form-control" maxlength="32" placeholder="Acme Corp" oninput="updateLivePreview()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted" for="brand_logo_url">{{ t('logo_url') }}</label>
+                            <input type="url" id="brand_logo_url" class="form-control" placeholder="https://example.com/logo.png" oninput="updateLivePreview()">
+                            <div class="form-text small">{{ t('logo_url_desc') }}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted" for="brand_custom_css">Custom CSS</label>
+                            <textarea id="brand_custom_css" class="form-control font-monospace" rows="4" placeholder=".my-class { color: red; }" maxlength="20000"></textarea>
+                            <div class="form-text small">{{ t('custom_css_hint') }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary px-4" onclick="saveBranding()" id="saveBrandingBtn">
+                                <i class="bi bi-check-lg me-1"></i> {{ t('save') }}
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="resetBranding()">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> {{ t('reset') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <div class="glass-panel p-3 p-md-4 h-100">
+                        <h5 class="fw-bold mb-3">{{ t('live_preview') }}</h5>
+                        <div class="branding-preview">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="branding-preview-logo" id="preview_logo">
+                                    <i class="bi bi-shield-lock-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-5" id="preview_company">PassVault</div>
+                                    <div class="text-muted small">{{ t('secure_vault') }}</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button class="btn btn-primary btn-sm" type="button">{{ t('primary_btn') }}</button>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button">{{ t('secondary_btn') }}</button>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary align-self-center">{{ t('badge') }}</span>
+                                </div>
+                            </div>
+                            <div class="branding-preview-card">
+                                <div class="fw-bold mb-1">{{ t('service_card') }}</div>
+                                <div class="text-muted small">{{ t('service_card_desc') }}</div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <span class="strength-dot strength-strong"></span>
+                                    <span class="text-muted small">{{ t('strong_pwd') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+</div>
+
+<!-- Модалка добавления/редактирования пользователя -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold" id="userModalTitle">{{ t('add_user') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+    <div class="modal-body p-4">
+      <form id="userForm">
+        <input type="hidden" id="editUserId">
+        <div class="mb-3"><label class="form-label small fw-bold text-muted" for="userName">{{ t('login') }} *</label><input type="text" class="form-control" name="username" id="userName" required></div>
+        <div class="mb-3" id="pwdField"><label class="form-label small fw-bold text-muted" for="userPasswordInput">{{ t('password') }} *</label><input type="password" class="form-control" name="password" minlength="8" id="userPasswordInput" required></div>
+        <div class="mb-3"><label class="form-label small fw-bold text-muted" for="userNames">{{ t('name') }}</label><input type="text" class="form-control" name="names" id="userNames"></div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">{{ t('role') }}</label>
+          <input type="hidden" name="role" id="userRole" value="user">
+          <div class="dropdown w-100">
+            <button class="form-select text-start d-flex justify-content-between align-items-center" type="button" id="userRoleBtn" data-bs-toggle="dropdown" aria-expanded="false">
+              <span id="userRoleLabel">{{ t('role_user') }}</span>
+            </button>
+            <ul class="dropdown-menu w-100 shadow-sm" aria-labelledby="userRoleBtn" id="userRoleMenu">
+              <li><button type="button" class="dropdown-item" data-value="user">{{ t('role_user') }}</button></li>
+              <li><button type="button" class="dropdown-item" data-value="manager">{{ t('role_manager') }}</button></li>
+              <li><button type="button" class="dropdown-item" data-value="admin">{{ t('role_admin') }}</button></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mb-3" id="resetPwdBtnWrap" style="display: none;">
+            <button type="button" class="btn btn-outline-danger w-100" onclick="openResetPwdModal()">
+                <i class="bi bi-key me-1"></i> {{ t('reset_password') }}
+            </button>
+        </div>
+
+        <div class="mb-3 form-check" id="activeField" style="display:none;"><input type="checkbox" class="form-check-input" id="userActive" checked><label class="form-check-label small" for="userActive">{{ t('active') }}</label></div>
+      </form>
+    </div>
+    <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary px-4" onclick="submitUser()">{{ t('save') }}</button></div>
+  </div></div>
+</div>
+
+<!-- Модалка сброса пароля -->
+<div class="modal fade" id="resetPwdModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-modal); background: var(--bg-solid);">
+      <div class="modal-header border-0 pb-0">
+        <h4 class="modal-title fw-bold">{{ t('reset_password') }}</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small mb-3">{{ t('user') }}: <strong id="resetPwdUserName"></strong></p>
+        <input type="hidden" id="resetPwdUserId">
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted" for="resetNewPassword">{{ t('new_password') }}</label>
+          <div class="input-group">
+            <input type="password" class="form-control font-monospace" id="resetNewPassword" minlength="8" placeholder="{{ t('new_password') }}">
+            <button class="btn btn-outline-secondary" type="button" onclick="toggleResetPwdVisibility(this)" title="{{ t('show') }}">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div class="form-text small">{{ t('generate_pwd_hint') }}</div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-2" onclick="generateRandomPwd()">
+          <i class="bi bi-shuffle me-1"></i> {{ t('generate') }}
+        </button>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+        <button type="button" class="btn btn-danger px-4" onclick="submitResetPassword()">{{ t('reset') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="detailsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('user_details') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+    <div class="modal-body p-4" id="detailsBody"></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="importUsersModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('import_users') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+    <div class="modal-body p-4">
+      <p class="text-muted small mb-3">{{ t('import_users_desc') }}</p>
+      <input type="file" id="csvUsersInput" class="form-control" accept=".csv">
+    </div>
+    <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary" onclick="importUsers()">{{ t('import') }}</button></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="vaultModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('create_folder') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+    <div class="modal-body p-4">
+      <div class="mb-3"><label class="form-label small fw-bold text-muted" for="vaultName">{{ t('name') }} *</label><input type="text" id="vaultName" class="form-control" placeholder="..."></div>
+    </div>
+    <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary" onclick="createVault()">{{ t('create') }}</button></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="vaultAccessModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold">{{ t('access_folder') }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('close') }}"></button></div>
+    <div class="modal-body p-4">
+      <input type="hidden" id="accessVaultId">
+      <ul class="nav nav-tabs mb-3" id="accessTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#access-users">{{ t('employees') }}</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access-pwds">{{ t('passwords') }}</button></li>
+      </ul>
+      <div class="tab-content" style="max-height: 400px; overflow-y: auto;">
+        <div class="tab-pane fade show active" id="access-users"><div id="access-users-list"></div></div>
+        <div class="tab-pane fade" id="access-pwds"><div id="access-pwds-list"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('cancel') }}</button><button type="button" class="btn btn-primary" onclick="saveVaultAccess()">{{ t('save') }}</button></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="viewPwdAdminModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow-lg text-center" style="border-radius: 24px; background: var(--bg-solid);">
+    <div class="modal-body p-4">
+      <p class="text-muted small mb-2">{{ t('password_for') }} <strong id="vpService"></strong></p>
+      <input type="text" id="vpPassword" class="form-control font-monospace text-center fs-5 mb-3" readonly>
+      <button class="btn btn-light w-100" data-bs-dismiss="modal">{{ t('close') }}</button>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pages/admin.js"></script>
+<script>
+function toggleResetPwdVisibility(btn) {
+    const input = document.getElementById('resetNewPassword');
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+/* =========================================================================
+   MOTION LAYER — плавные переходы, рассчитанные на 60 / 120+ Гц.
+
+   Правила:
+   1. Движение только через compositor (transform / opacity).
+   2. Никаких «transition: all» — каждая анимация перечисляет свои свойства.
+   3. Тяжёлые эффекты (backdrop-filter) снимаются во время скролла.
+   4. Уважается prefers-reduced-motion.
+   ========================================================================= */
+
+:root {
+    /* Длительности: на 120 Гц 140 мс = ~17 кадров — достаточно для отклика. */
+    --motion-instant: 90ms;
+    --motion-fast: 140ms;
+    --motion-base: 220ms;
+    --motion-slow: 320ms;
+
+    /* Кривые с мягким стартом и плавным затуханием (без «дёргания»). */
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
+}
+
+/* --- Базовые элементы ---------------------------------------------------- */
+
+body {
+    transition: background-color var(--motion-slow) var(--ease-out),
+                color var(--motion-slow) var(--ease-out);
+}
+
+.btn,
+.nav-item-custom,
+.filter-chip,
+.custom-select-btn,
+.cat-pill,
+.action-btn,
+.fab-add,
+.clipboard-toast button {
+    transition: transform var(--motion-fast) var(--ease-out),
+                background-color var(--motion-fast) var(--ease-out),
+                border-color var(--motion-fast) var(--ease-out),
+                box-shadow var(--motion-fast) var(--ease-out),
+                color var(--motion-fast) var(--ease-out);
+}
+
+.vault-item,
+.glass-card,
+.stat-card,
+.vault-card {
+    transition: transform var(--motion-base) var(--ease-glide),
+                opacity var(--motion-base) var(--ease-out),
+                box-shadow var(--motion-base) var(--ease-out),
+                border-color var(--motion-base) var(--ease-out);
+}
+
+.form-control,
+.form-select,
+.search-input,
+.pwd-input-group {
+    transition: border-color var(--motion-fast) var(--ease-out),
+                box-shadow var(--motion-fast) var(--ease-out),
+                background-color var(--motion-fast) var(--ease-out);
+}
+
+.sidebar {
+    transition: transform var(--motion-slow) var(--ease-glide);
+}
+
+.main-content {
+    transition: margin-left var(--motion-slow) var(--ease-glide);
+}
+
+.sidebar-overlay {
+    transition: opacity var(--motion-base) var(--ease-out),
+                visibility var(--motion-base) var(--ease-out);
+}
+
+/* Тактильная отдача нажатия — только transform, без layout/paint. */
+@media (hover: hover) and (pointer: fine) {
+    .btn:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+    .action-btn:active { transform: scale(0.9); }
+    .nav-item-custom:active { transform: translateX(1px) scale(0.99); }
+    .filter-chip:active { transform: scale(0.96); }
+}
+
+/* FLIP-анимация карточек: во время движения отключаем hover-трансформ,
+   чтобы WAAPI и CSS не боролись за одно и то же свойство. */
+.vault-item.is-flipping { pointer-events: none; }
+.vault-item.is-flipping:hover { transform: none; }
+
+/* --- Backdrop-filter: главный враг стабильных 120 Гц --------------------- */
+
+/* Меньше радиус — меньше работы GPU на каждый кадр. */
+[data-theme-glass="true"] .sidebar,
+[data-theme-glass="true"] .glass-card,
+[data-theme-glass="true"] .modal-content,
+[data-theme-glass="true"] .login-card,
+[data-theme-glass="true"] .dropdown-menu {
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+/* При скролле снимаем размытие с карточек и делаем фон плотнее.
+   На глаз почти незаметно, но убирает readback бэкдропа каждый кадр. */
+html.is-scrolling[data-theme-glass="true"] .vault-item,
+html.is-scrolling[data-theme-glass="true"] .stat-card,
+html.is-scrolling[data-theme-glass="true"] .stat-tile,
+html.is-scrolling[data-theme-glass="true"] .glass-card,
+html.is-scrolling[data-theme-glass="true"] .vault-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(var(--bg-base-rgb), 0.96) !important;
+}
+
+html.is-scrolling[data-theme-glass="true"][data-bs-theme="light"] .vault-item,
+html.is-scrolling[data-theme-glass="true"][data-bs-theme="light"] .stat-card,
+html.is-scrolling[data-theme-glass="true"][data-bs-theme="light"] .stat-tile,
+html.is-scrolling[data-theme-glass="true"][data-bs-theme="light"] .glass-card,
+html.is-scrolling[data-theme-glass="true"][data-bs-theme="light"] .vault-card {
+    background: rgba(255, 255, 255, 0.94) !important;
+}
+
+/* --- Плавная прокрутка --------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
+
+/* --- Появление страницы --------------------------------------------------
+   Полноценные cross-document View Transitions в Chromium при переходах
+   логина дают «AbortError: Transition was skipped» в консоли. Поэтому
+   используем обычную CSS-анимацию: она работает везде и не шумит. */
+
+@keyframes pageEnter {
+    from { opacity: 0; transform: translate3d(0, 8px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+main.main-content {
+    /* backwards: до старта берём начальное состояние, но после завершения
+       не оставляем transform — иначе у position:fixed внутри main появится
+       новый containing block и сломается позиционирование FAB/модалок. */
+    animation: pageEnter var(--motion-base) var(--ease-out) backwards;
+}
+
+/* Сайдбар появляется чуть раньше контента — создаёт ощущение «сборки» UI.
+   ВАЖНО: только opacity! Трансформ зарезервирован за мобильным меню
+   (.sidebar { transform: translateX(-100%) } / .sidebar.show), поэтому
+   анимация translate перекрывала бы состояние закрытого сайдбара. */
+@keyframes sidebarEnter {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.sidebar {
+    animation: sidebarEnter var(--motion-fast) var(--ease-out) backwards;
+}
+
+/* --- Доступность -------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Входные анимации полностью убираем, чтобы не было ни сдвигов, ни мигания. */
+    main.main-content,
+    .sidebar,
+    .fade-in-up {
+        animation: none !important;
+    }
+
+    main.main-content,
+    .fade-in-up {
+        transform: none !important;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: 0.01ms !important;
+    }
+}

@@ -1,0 +1,43 @@
+# Секреты и данные — НИКОГДА не коммитить
+.env
+.env.*
+!.env.example
+.flask_secret
+.initial_admin_password
+secret.key
+passwords.db
+license.code
+license.json
+license_key.txt
+installation.json
+license_server.conf
+.password
+.secret
+license_server.db
+license_server_data/
+data/
+backups/
+certs/
+
+# Приватные ключи. Публичный ключ можно коммитить — он не даёт возможности подписать лицензию.
+*.pem
+!public_key.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Логи и временные файлы
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Инструменты
+.idea/
+.vscode/
+.pytest_cache/
+.mypy_cache/

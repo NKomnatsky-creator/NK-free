@@ -1,0 +1,95 @@
+/* === Переопределения темы и глобальные элементы (зависят от сервера) === */
+
+:root {
+    --brand: var(--theme-brand, #4f46e5);
+    --brand-rgb: var(--theme-brand-rgb, 79, 70, 229);
+    --brand-hover: #4338ca;
+    --brand-light: rgba(var(--brand-rgb), 0.15);
+    --brand-2: var(--theme-brand-2, #8b5cf6);
+    --brand-2-rgb: var(--theme-brand-2-rgb, 124, 58, 237);
+    --radius-card: var(--theme-radius-card, 16px);
+    --radius-modal: var(--theme-radius-modal, 24px);
+    --font-main: var(--theme-font, 'Outfit'), sans-serif;
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+    :root {
+        --brand-hover: color-mix(in srgb, var(--theme-brand, #4f46e5) 80%, black);
+        --brand-light: color-mix(in srgb, var(--theme-brand, #4f46e5) 15%, transparent);
+    }
+}
+
+.lang-switch-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 1051;
+    background: var(--bg-solid);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: opacity 0.3s;
+}
+
+.free-watermark {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    z-index: 1050;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    animation: slideUp 0.5s ease-out;
+    white-space: nowrap;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+.free-watermark a { color: #a5b4fc; }
+.free-watermark a:hover { color: #fff; }
+
+@keyframes slideUp {
+    from { transform: translate(-50%, 20px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+body.sidebar-open .free-watermark,
+body.sidebar-open .lang-switch-btn {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+@media (max-width: 991px) {
+    body {
+        padding-bottom: 100px;
+    }
+    .main-content {
+        padding-bottom: 120px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .free-watermark {
+        bottom: 70px;
+        width: calc(100% - 32px);
+        white-space: normal;
+        text-align: center;
+        font-size: 0.75rem;
+        padding: 8px 16px;
+    }
+    .lang-switch-btn {
+        bottom: 16px;
+    }
+    .fab-add {
+        bottom: 130px;
+    }
+}
